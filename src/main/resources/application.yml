@@ -64,9 +64,6 @@ service:
   bender:
     url: http://localhost:8022/change_it
     networkTimeout: 5000
-
-
-
 info:
   version: '@project.version@'
   stage: dev
