@@ -17,12 +17,12 @@ import java.util.Optional;
 import static dev.vality.disputes.tg.bot.domain.tables.MerchantDispute.MERCHANT_DISPUTE;
 
 @Component
-public class DisputeDao extends AbstractGenericDao {
+public class MerchantDisputeDao extends AbstractGenericDao {
 
     private final RowMapper<MerchantDispute> disputeRowMapper;
 
     @Autowired
-    public DisputeDao(DataSource dataSource) {
+    public MerchantDisputeDao(DataSource dataSource) {
         super(dataSource);
         disputeRowMapper = new RecordRowMapper<>(MERCHANT_DISPUTE, MerchantDispute.class);
     }
@@ -57,6 +57,14 @@ public class DisputeDao extends AbstractGenericDao {
         return Optional.ofNullable(keyHolder.getKey())
                 .map(Number::longValue)
                 .orElseThrow();
+    }
+
+    public void update(MerchantDispute dispute) {
+        var record = getDslContext().newRecord(MERCHANT_DISPUTE, dispute);
+        var query = getDslContext().update(MERCHANT_DISPUTE)
+                .set(record)
+                .where(MERCHANT_DISPUTE.ID.eq(dispute.getId()));
+        execute(query);
     }
 
     public List<MerchantDispute> getPendingDisputesSkipLocked(int limit) {

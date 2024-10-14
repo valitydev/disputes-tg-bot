@@ -1,31 +1,35 @@
 package dev.vality.disputes.tg.bot.common.handler;
 
+import dev.vality.disputes.tg.bot.common.dto.MessageDto;
+import dev.vality.disputes.tg.bot.common.service.DisputesBot;
 import lombok.extern.slf4j.Slf4j;
-import org.telegram.telegrambots.meta.api.objects.Update;
+import org.springframework.stereotype.Component;
+import org.telegram.telegrambots.meta.api.objects.chatmember.ChatMemberLeft;
 
 @Slf4j
-public class AddedToGroupChatHandler implements CommonHandler<Void> {
+@Component
+public class RemovedFromGroupChatHandler implements CommonHandler {
 
-    private static final String status = "member";
 
     @Override
-    public boolean filter(Update update) {
-        boolean isNotMessage = update.hasMessage();
+    public boolean filter(MessageDto messageDto) {
+        var update = messageDto.getUpdate();
         boolean isMyGroupChatStatusChanged = update.hasMyChatMember();
-        if (isNotMessage && isMyGroupChatStatusChanged) {
-           boolean isMyRoleChanged = update.getMyChatMember().getNewChatMember() != null;
-           if (isMyRoleChanged) {
-               return status.equals(update.getMyChatMember().getNewChatMember().getStatus());
-           }
+        if (!update.hasMessage() && isMyGroupChatStatusChanged) {
+            boolean isMyRoleChanged = update.getMyChatMember().getNewChatMember() != null;
+            if (isMyRoleChanged) {
+                return update.getMyChatMember().getNewChatMember() instanceof ChatMemberLeft;
+            }
         }
         return false;
     }
 
     @Override
-    public Void handle(Update update, long userId) {
-        log.debug("AddedToGroupChatHandler is handling update: {}", update);
+    public void handle(MessageDto messageDto, DisputesBot disputesBot) {
+        var update = messageDto.getUpdate();
+        log.debug("RemovedFromGroupChatHandler is handling update: {}", update);
         var chatMember = update.getMyChatMember();
-        log.info("Added to chat: '{}' with id: '{}'", chatMember.getChat().getTitle(), chatMember.getChat().getId());
-        return null;
+        log.info("Bot was removed from chat: '{}' with id: '{}'", chatMember.getChat().getTitle(),
+                chatMember.getChat().getId());
     }
 }

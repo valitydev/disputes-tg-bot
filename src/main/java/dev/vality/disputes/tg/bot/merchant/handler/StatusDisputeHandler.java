@@ -1,52 +1,51 @@
 package dev.vality.disputes.tg.bot.merchant.handler;
 
-import dev.vality.damsel.payment_processing.Invoice;
-import dev.vality.damsel.payment_processing.InvoiceNotFound;
-import dev.vality.disputes.DisputeParams;
+import dev.vality.disputes.merchant.DisputeContext;
+import dev.vality.disputes.merchant.DisputeNotFound;
+import dev.vality.disputes.merchant.DisputeStatusResult;
+import dev.vality.disputes.tg.bot.common.dto.DisputeInfoDto;
 import dev.vality.disputes.tg.bot.common.dto.MessageDto;
-import dev.vality.disputes.tg.bot.common.dto.PaymentInfoDto;
 import dev.vality.disputes.tg.bot.common.handler.CommonHandler;
 import dev.vality.disputes.tg.bot.common.service.DisputesBot;
 import dev.vality.disputes.tg.bot.common.service.Polyglot;
+import dev.vality.disputes.tg.bot.common.util.TelegramUtil;
 import dev.vality.disputes.tg.bot.common.util.TextParsingUtil;
 import dev.vality.disputes.tg.bot.domain.enums.ChatType;
 import dev.vality.disputes.tg.bot.domain.enums.DisputeStatus;
-import dev.vality.disputes.tg.bot.domain.tables.pojos.Dispute;
-import dev.vality.disputes.tg.bot.merchant.converter.UpdateToAttachmentConverter;
-import dev.vality.disputes.tg.bot.merchant.dao.DisputeDao;
+import dev.vality.disputes.tg.bot.domain.tables.pojos.MerchantDispute;
+import dev.vality.disputes.tg.bot.merchant.dao.MerchantDisputeDao;
 import dev.vality.disputes.tg.bot.merchant.service.external.DisputesApiService;
-import dev.vality.disputes.tg.bot.merchant.service.external.HellgateService;
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
-import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
-import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
+
+import static dev.vality.disputes.tg.bot.common.util.TelegramUtil.extractText;
 
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class CreateDisputeHandler implements CommonHandler<SendMessage> {
+@SuppressWarnings("MissingSwitchDefault")
+public class StatusDisputeHandler implements CommonHandler {
 
-    private static final String LATIN_SINGLE_LETTER = "/c ";
-    private static final String CYRILLIC_SINGLE_LETTER = "/с ";
-    private static final String FULL_COMMAND = "/check ";
+    private static final String LATIN_SINGLE_LETTER = "/s ";
+    private static final String FULL_COMMAND = "/status ";
 
-    private final DisputeDao disputeDao;
+    private final MerchantDisputeDao merchantDisputeDao;
     private final Polyglot polyglot;
     private final DisputesApiService disputesApiService;
-    private final HellgateService hellgateService;
-    private final UpdateToAttachmentConverter attachmentConverter;
 
     @Override
     public boolean filter(MessageDto messageDto) {
         var update = messageDto.getUpdate();
-        if (!update.hasMessage() || extractText(update) == null) {
+        String messageText = extractText(update);
+        if (messageText == null) {
             return false;
         }
 
@@ -54,132 +53,94 @@ public class CreateDisputeHandler implements CommonHandler<SendMessage> {
             return false;
         }
 
-        String messageText = extractText(update);
         return messageText.startsWith(LATIN_SINGLE_LETTER)
-                || messageText.startsWith(CYRILLIC_SINGLE_LETTER)
                 || messageText.startsWith(FULL_COMMAND);
     }
 
     @Override
-    public SendMessage handle(MessageDto messageDto, DisputesBot disputesBot) {
+    @SneakyThrows
+    public void handle(MessageDto messageDto, DisputesBot disputesBot) {
         Update update = messageDto.getUpdate();
         String messageText = extractText(update);
         String replyLocale = update.getMessage().getFrom().getLanguageCode();
-        Optional<PaymentInfoDto> paymentInfoOptional = TextParsingUtil.getPaymentInfo(messageText);
+        Optional<DisputeInfoDto> paymentInfoOptional = TextParsingUtil.getDisputeInfo(messageText);
 
         if (paymentInfoOptional.isEmpty()) {
             log.warn("Payment info not found, message text: {}", messageText);
-            String reply = polyglot.getText(replyLocale, "error.input.invoice-missing");
-            return buildPlainTextResponse(update, reply);
+            String reply = polyglot.getText(replyLocale, "error.input.dispute-or-invoice-missing");
+            disputesBot.execute(TelegramUtil.buildPlainTextResponse(update, reply));
+            return;
         }
 
-        if (!hasAttachment(update)) {
-            log.warn("Attachment not found, message text: {}", messageText);
-            String reply = polyglot.getText(replyLocale, "error.input.attachment-missing");
-            return buildPlainTextResponse(update, reply);
+        List<MerchantDispute> matchingDisputes = findDisputes(paymentInfoOptional.get());
+        if (matchingDisputes.isEmpty()) {
+            log.info("Dispute not found: {}", messageText);
+            String reply = polyglot.getText(replyLocale, "error.input.dispute-not-found");
+            disputesBot.execute(TelegramUtil.buildPlainTextResponse(update, reply));
+            return;
         }
-
-
-        try {
-            fillMissingPaymentInfo(paymentInfoOptional.get());
-        } catch (InvoiceNotFound e) {
-            String reply = polyglot.getText(replyLocale, "error.processing.invoice-not-found");
-            return buildPlainTextResponse(update, reply);
-        } catch (Exception e1) {
-            String reply = polyglot.getText(replyLocale, "error.unknown");
-            return buildPlainTextResponse(update, reply);
+        updateDisputesStatuses(matchingDisputes);
+        String response;
+        if (matchingDisputes.isEmpty()) {
+            response = polyglot.getText(replyLocale, "error.input.dispute-not-found");
+        } else {
+            response = buildPlainTextResponse(matchingDisputes, replyLocale);
         }
+        disputesBot.execute(TelegramUtil.buildPlainTextResponse(update, response));
+    }
 
-        PaymentInfoDto paymentInfo = paymentInfoOptional.get();
-        var disputeOptional = disputeDao.getPendingDisputeByInvoiceIdAndPaymentId(paymentInfo);
-        if (disputeOptional.isPresent()) {
-            var dispute = disputeOptional.get();
-            log.info("Dispute has been already created: {}", messageText);
-            String reply = polyglot.getText(replyLocale, "dispute.status",
-                    dispute.getDisputeId(),
-                    dispute.getInvoiceId(),
-                    dispute.getExternalId(),
-                    dispute.getStatus().getLiteral());
-            return buildPlainTextResponse(update, reply);
-        }
-
-        DisputeParams disputeParams = new DisputeParams();
-        disputeParams.setInvoiceId(paymentInfo.getInvoiceId());
-        disputeParams.setPaymentId(paymentInfo.getPaymentId());
-
-        try {
-            var attachment = attachmentConverter.convert(messageDto.getUpdate(), disputesBot);
-            disputeParams.setAttachments(List.of(attachment));
-        } catch (TelegramApiException | IOException e) {
-            log.error("Unable to process attached file", e);
-            String reply = polyglot.getText(replyLocale, "error.unknown");
-            return buildPlainTextResponse(update, reply);
-        }
-
-
-        try {
-            var response = disputesApiService.createDispute(disputeParams);
-            log.info("Dispute has been created: {}", response);
-            if (response.isSetSuccessResult()) {
-                paymentInfo.setDisputeId(response.getSuccessResult().getDisputeId());
-                Dispute dispute = buildDispute(update, paymentInfo);
-                disputeDao.save(dispute);
-                String reply = polyglot.getText(replyLocale, "dispute.status",
-                        dispute.getDisputeId(),
-                        dispute.getInvoiceId(),
-                        dispute.getExternalId());
-                return buildPlainTextResponse(update, reply);
-            } else {
-                log.warn("This point should not be reached, check previous logs");
+    private List<MerchantDispute> findDisputes(DisputeInfoDto paymentInfo) {
+        if (paymentInfo.getDisputeId() != null) {
+            Optional<MerchantDispute> optionalDispute = merchantDisputeDao.getByDisputeId(paymentInfo.getDisputeId());
+            if (optionalDispute.isPresent()) {
+                return List.of(optionalDispute.get());
             }
-        } catch (Exception e) {
-            log.error("Unexpected error occurred", e);
-            String reply = polyglot.getText(replyLocale, "error.unknown");
-            return buildPlainTextResponse(update, reply);
         }
 
-        log.warn("This point should not be reached, check previous logs");
-        String reply = polyglot.getText(replyLocale, "error.unknown");
-        return buildPlainTextResponse(update, reply);
-    }
-
-    private SendMessage buildPlainTextResponse(Update update, String text) {
-        return SendMessage.builder()
-                .chatId(update.getMessage().getChatId())
-                .replyToMessageId(update.getMessage().getMessageId())
-                .parseMode("MarkdownV2")
-                .text(text)
-                .build();
-    }
-
-    private boolean hasAttachment(Update update) {
-        return update.getMessage().hasPhoto() || update.getMessage().hasDocument();
-    }
-
-    private void fillMissingPaymentInfo(PaymentInfoDto paymentInfoDto) throws InvoiceNotFound {
-        Invoice invoice = hellgateService.getInvoice(paymentInfoDto.getInvoiceId());
-        if (paymentInfoDto.getPaymentId() == null) {
-            paymentInfoDto.setPaymentId(invoice.getPayments().getLast().getPayment().getId());
+        if (paymentInfo.getInvoiceId() != null) {
+            return merchantDisputeDao.getByInvoiceId(paymentInfo.getInvoiceId());
         }
-        paymentInfoDto.setExternalId(invoice.getInvoice().getExternalId());
+        return List.of();
     }
 
-    private Dispute buildDispute(Update update, PaymentInfoDto paymentInfo) {
-        Dispute dispute = new Dispute();
-        dispute.setCreatedAt(LocalDateTime.now());
+    public void updateDisputesStatuses(List<MerchantDispute> disputes) {
+        for (MerchantDispute dispute : disputes) {
+            DisputeContext disputeContext = new DisputeContext();
+            disputeContext.setDisputeId(dispute.getDisputeId());
+            DisputeStatusResult result;
+            try {
+                result = disputesApiService.getStatus(disputeContext);
+                updateDisputeInfo(dispute, result);
+                merchantDisputeDao.update(dispute);
+            } catch (DisputeNotFound e) {
+                log.warn("Dispute not found: {}", dispute.getDisputeId());
+            }
+        }
+    }
+
+    private String buildPlainTextResponse(List<MerchantDispute> disputes, String replyLocale) {
+        return disputes.stream()
+                .map(dispute -> createDisputeStatusInfoResponse(dispute, replyLocale))
+                .collect(Collectors.joining("\n\n"));
+    }
+
+    private void updateDisputeInfo(MerchantDispute dispute, DisputeStatusResult disputeStatusResult) {
         dispute.setUpdatedAt(LocalDateTime.now());
-        dispute.setChatId(update.getMessage().getChatId());
-        dispute.setInvoiceId(paymentInfo.getInvoiceId());
-        dispute.setPaymentId(paymentInfo.getPaymentId());
-        dispute.setDisputeId(paymentInfo.getDisputeId());
-        dispute.setExternalId(paymentInfo.getExternalId());
-        dispute.setMerchantTgMessageId(Long.valueOf(update.getMessage().getMessageId()));
-        dispute.setStatus(DisputeStatus.pending);
-        return dispute;
+        switch (disputeStatusResult.getSetField()) {
+            case STATUS_PENDING -> dispute.setStatus(DisputeStatus.pending);
+            case STATUS_SUCCESS -> dispute.setStatus(DisputeStatus.approved);
+            case STATUS_FAIL -> {
+                dispute.setStatus(DisputeStatus.declined);
+                dispute.setMessage(disputeStatusResult.getStatusFail().getMessage());
+            }
+        }
     }
 
-    private String extractText(Update update) {
-        return update.getMessage().hasText()
-                ? update.getMessage().getText() : update.getMessage().getCaption();
+    private String createDisputeStatusInfoResponse(MerchantDispute dispute, String replyLocale) {
+        return polyglot.getText(replyLocale, "dispute.status",
+                dispute.getDisputeId(),
+                dispute.getInvoiceId(),
+                dispute.getExternalId(),
+                dispute.getStatus().getLiteral());
     }
 }

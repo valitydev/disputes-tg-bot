@@ -1,8 +1,8 @@
-package dev.vality.disputes.tg.bot.provider.exception;
+package dev.vality.disputes.tg.bot.common.exception;
 
-public class TerminalConfigurationException extends RuntimeException {
+public class ConfigurationException extends RuntimeException {
 
-    public TerminalConfigurationException(String message) {
+    public ConfigurationException(String message) {
         super(message);
     }
 }

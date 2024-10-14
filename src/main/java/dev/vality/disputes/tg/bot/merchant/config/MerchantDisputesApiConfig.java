@@ -10,7 +10,7 @@ import org.springframework.core.io.Resource;
 import java.io.IOException;
 
 @Configuration
-public class DisputesApiConfig {
+public class MerchantDisputesApiConfig {
 
     @Bean
     public MerchantDisputesServiceSrv.Iface disputesMerchantClient(

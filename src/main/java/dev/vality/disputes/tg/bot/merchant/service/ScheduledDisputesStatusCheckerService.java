@@ -1,8 +1,12 @@
-package dev.vality.disputes.schedule;
+package dev.vality.disputes.tg.bot.merchant.service;
 
-import dev.vality.disputes.domain.tables.pojos.Dispute;
-import dev.vality.disputes.schedule.handler.CreatedDisputeHandler;
-import dev.vality.disputes.schedule.service.CreatedDisputesService;
+import dev.vality.disputes.tg.bot.common.service.DisputesBot;
+import dev.vality.disputes.tg.bot.common.service.Polyglot;
+import dev.vality.disputes.tg.bot.common.util.TelegramUtil;
+import dev.vality.disputes.tg.bot.domain.enums.DisputeStatus;
+import dev.vality.disputes.tg.bot.domain.tables.pojos.MerchantDispute;
+import dev.vality.disputes.tg.bot.merchant.dao.MerchantDisputeDao;
+import dev.vality.disputes.tg.bot.merchant.handler.StatusDisputeHandler;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -10,40 +14,58 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.stream.Collectors;
+import java.util.List;
 
 @Slf4j
-@ConditionalOnProperty(value = "dispute.isScheduleCreatedEnabled", havingValue = "true")
+@ConditionalOnProperty(value = "dispute.isScheduleEnabled", havingValue = "true")
 @Service
 @RequiredArgsConstructor
-public class TaskCreatedDisputesService {
+public class ScheduledDisputesStatusCheckerService {
 
-    private final ExecutorService disputesThreadPool;
-    private final CreatedDisputesService createdDisputesService;
+    private final Polyglot polyglot;
+    private final DisputesBot disputesBot;
+    private final MerchantDisputeDao merchantDisputeDao;
+    private final StatusDisputeHandler statusDisputeHandler;
     @Value("${dispute.batchSize}")
     private int batchSize;
 
-    @Scheduled(fixedDelayString = "${dispute.fixedDelayCreated}", initialDelayString = "${dispute.initialDelayCreated}")
-    public void processCreated() {
-        log.debug("Processing created disputes get started");
+    @Scheduled(fixedDelayString = "${dispute.fixedDelayStatus}", initialDelayString = "${dispute.initialDelayStatus}")
+    public void processPendingDisputes() {
+        log.debug("Updating pending disputes statuses");
         try {
-            var disputes = createdDisputesService.getCreatedDisputesForUpdateSkipLocked(batchSize);
-            var callables = disputes.stream()
-                    .map(this::handleCreated)
-                    .collect(Collectors.toList());
-            disputesThreadPool.invokeAll(callables);
-        } catch (InterruptedException ex) {
-            log.error("Received InterruptedException while thread executed report", ex);
-            Thread.currentThread().interrupt();
-        } catch (Throwable ex) {
-            log.error("Received exception while scheduler processed created disputes", ex);
+            var disputes = merchantDisputeDao.getPendingDisputesSkipLocked(batchSize);
+            if (disputes.isEmpty()) {
+                log.debug("Found 0 pending disputes");
+            } else {
+                log.info("Found {} pending disputes", disputes.size());
+            }
+            statusDisputeHandler.updateDisputesStatuses(disputes);
+            List<MerchantDispute> finalizedDisputes =
+                    disputes.stream().filter(dispute -> !DisputeStatus.pending.equals(dispute.getStatus()))
+                            .toList();
+            log.info("Finalized {} disputes by schedule", finalizedDisputes.size());
+            finalizedDisputes.forEach(this::sendReply);
+        } catch (Exception ex) {
+            log.error("Received exception while scheduled processing created disputes", ex);
         }
-        log.info("Created disputes were processed");
     }
 
-    private Callable<Long> handleCreated(Dispute dispute) {
-        return () -> new CreatedDisputeHandler(createdDisputesService).handle(dispute);
+    private void sendReply(MerchantDispute dispute) {
+        String reply = createDisputeStatusInfoResponse(dispute, dispute.getTgMessageLocale());
+        try {
+            disputesBot.execute(TelegramUtil.buildPlainTextResponse(dispute.getChatId(),
+                    reply, Math.toIntExact(dispute.getTgMessageId())));
+        } catch (Exception ex) {
+            log.warn("Failed to send reply, dispute: {}", dispute, ex);
+        }
+    }
+
+    private String createDisputeStatusInfoResponse(MerchantDispute dispute, String replyLocale) {
+        return polyglot.getText(replyLocale, "dispute.status",
+                dispute.getDisputeId(),
+                dispute.getInvoiceId(),
+                dispute.getExternalId(),
+                dispute.getStatus().getLiteral(),
+                dispute.getUpdatedAt());
     }
 }

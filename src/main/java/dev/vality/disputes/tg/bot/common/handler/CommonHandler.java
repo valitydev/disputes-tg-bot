@@ -1,12 +1,12 @@
-package dev.vality.alert.tg.bot.handler;
+package dev.vality.disputes.tg.bot.common.handler;
 
-import org.apache.thrift.TException;
-import org.telegram.telegrambots.meta.api.objects.Update;
+import dev.vality.disputes.tg.bot.common.dto.MessageDto;
+import dev.vality.disputes.tg.bot.common.service.DisputesBot;
 
-public interface CommonHandler<T> {
+public interface CommonHandler {
 
-    boolean filter(final Update update);
+    boolean filter(final MessageDto messageDto);
 
-    T handle(Update update, long userId) throws TException;
+    void handle(MessageDto messageDto, DisputesBot disputesBot);
 
 }

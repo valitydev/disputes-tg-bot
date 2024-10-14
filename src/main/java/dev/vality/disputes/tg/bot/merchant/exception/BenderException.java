@@ -1,4 +1,4 @@
-package dev.vality.disputes.tg.bot.common.exception;
+package dev.vality.disputes.tg.bot.merchant.exception;
 
 public class BenderException extends RuntimeException {
 
