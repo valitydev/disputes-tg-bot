@@ -50,6 +50,13 @@ spring:
       scheme: http
       token: "123456"
 
+dispute:
+  isScheduleEnabled: true
+  batchSize: 1
+  fixedDelayStatus: 900000
+  initialDelayStatus: 60000
+
+
 bot:
   token: ${botToken}
   name: DisputesBot

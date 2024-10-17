@@ -41,7 +41,7 @@ CREATE TABLE dspt_tg_bot.provider_dispute
     created_at      TIMESTAMP WITHOUT TIME ZONE NOT NULL,
     replied_at      TIMESTAMP WITHOUT TIME ZONE,
     chat_id         BIGSERIAL         NOT NULL,
-    tg_message_id   BIGINT            NOT NULL,
+    tg_message_id   BIGINT,
     invoice_id      CHARACTER VARYING NOT NULL,
     payment_id      CHARACTER VARYING NOT NULL,
     provider_trx_id CHARACTER VARYING,
@@ -65,5 +65,6 @@ CREATE TABLE dspt_tg_bot.support_dispute
 
     CONSTRAINT dispute_support_id_pkey PRIMARY KEY (id),
     FOREIGN KEY (chat_id) REFERENCES dspt_tg_bot.chat (id),
-    FOREIGN KEY (provider_dispute_id) REFERENCES dspt_tg_bot.provider_dispute (id)
+    FOREIGN KEY (provider_dispute_id) REFERENCES dspt_tg_bot.provider_dispute (id),
+    UNIQUE (tg_message_id, chat_id)
 );

@@ -16,6 +16,8 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+import static dev.vality.disputes.tg.bot.merchant.util.PolyglotUtil.prepareStatusMessage;
+
 @Slf4j
 @ConditionalOnProperty(value = "dispute.isScheduleEnabled", havingValue = "true")
 @Service
@@ -51,21 +53,12 @@ public class ScheduledDisputesStatusCheckerService {
     }
 
     private void sendReply(MerchantDispute dispute) {
-        String reply = createDisputeStatusInfoResponse(dispute, dispute.getTgMessageLocale());
+        String reply = prepareStatusMessage(dispute, dispute.getTgMessageLocale(), polyglot);
         try {
             disputesBot.execute(TelegramUtil.buildPlainTextResponse(dispute.getChatId(),
                     reply, Math.toIntExact(dispute.getTgMessageId())));
         } catch (Exception ex) {
             log.warn("Failed to send reply, dispute: {}", dispute, ex);
         }
-    }
-
-    private String createDisputeStatusInfoResponse(MerchantDispute dispute, String replyLocale) {
-        return polyglot.getText(replyLocale, "dispute.status",
-                dispute.getDisputeId(),
-                dispute.getInvoiceId(),
-                dispute.getExternalId(),
-                dispute.getStatus().getLiteral(),
-                dispute.getUpdatedAt());
     }
 }

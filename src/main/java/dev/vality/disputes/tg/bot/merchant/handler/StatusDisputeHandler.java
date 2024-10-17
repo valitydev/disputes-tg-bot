@@ -27,6 +27,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static dev.vality.disputes.tg.bot.common.util.TelegramUtil.extractText;
+import static dev.vality.disputes.tg.bot.merchant.util.PolyglotUtil.prepareStatusMessage;
 
 @Slf4j
 @Component
@@ -120,7 +121,7 @@ public class StatusDisputeHandler implements CommonHandler {
 
     private String buildPlainTextResponse(List<MerchantDispute> disputes, String replyLocale) {
         return disputes.stream()
-                .map(dispute -> createDisputeStatusInfoResponse(dispute, replyLocale))
+                .map(dispute -> prepareStatusMessage(dispute, replyLocale, polyglot))
                 .collect(Collectors.joining("\n\n"));
     }
 
@@ -134,13 +135,5 @@ public class StatusDisputeHandler implements CommonHandler {
                 dispute.setMessage(disputeStatusResult.getStatusFail().getMessage());
             }
         }
-    }
-
-    private String createDisputeStatusInfoResponse(MerchantDispute dispute, String replyLocale) {
-        return polyglot.getText(replyLocale, "dispute.status",
-                dispute.getDisputeId(),
-                dispute.getInvoiceId(),
-                dispute.getExternalId(),
-                dispute.getStatus().getLiteral());
     }
 }

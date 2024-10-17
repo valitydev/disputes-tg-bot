@@ -1,8 +1,14 @@
 package dev.vality.disputes.tg.bot.common.util;
 
 import lombok.experimental.UtilityClass;
+import org.telegram.telegrambots.meta.api.methods.reactions.SetMessageReaction;
+import org.telegram.telegrambots.meta.api.methods.send.SendDocument;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.objects.InputFile;
 import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.api.objects.reactions.ReactionTypeEmoji;
+
+import java.util.List;
 
 @UtilityClass
 public class TelegramUtil {
@@ -32,6 +38,15 @@ public class TelegramUtil {
                 .replyToMessageId(replyToMessage)
                 .parseMode(HTML_PARSE_MODE)
                 .text(text)
+                .build();
+    }
+
+    public static SendDocument buildTextWithAttachmentResponse(Long chatId, String text, InputFile file) {
+        return SendDocument.builder()
+                .chatId(chatId)
+                .parseMode(HTML_PARSE_MODE)
+                .document(file)
+                .caption(text)
                 .build();
     }
 
@@ -75,5 +90,14 @@ public class TelegramUtil {
     public static boolean hasAttachment(Update update) {
         return update.hasMessage()
                 && (update.getMessage().hasPhoto() || update.getMessage().hasDocument());
+    }
+
+    public static SetMessageReaction getSetMessageReaction(Long chatId, Integer messageId, String emoji) {
+        var reaction = ReactionTypeEmoji.builder().emoji(emoji).build();
+        var messageReaction = new SetMessageReaction();
+        messageReaction.setChatId(chatId);
+        messageReaction.setMessageId(messageId);
+        messageReaction.setReactionTypes(List.of(reaction));
+        return messageReaction;
     }
 }
