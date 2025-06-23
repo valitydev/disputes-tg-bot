@@ -1,6 +1,5 @@
 package dev.vality.disputes.tg.bot.support.handler.command;
 
-import dev.vality.disputes.admin.AdminManagementServiceSrv;
 import dev.vality.disputes.tg.bot.core.service.Polyglot;
 import dev.vality.disputes.tg.bot.core.util.TelegramUtil;
 import dev.vality.disputes.tg.bot.support.config.properties.SupportChatProperties;
@@ -23,7 +22,6 @@ public class TopicInfoHandler implements SupportMessageHandler {
     private static final String FULL_COMMAND = "/info";
 
     private final SupportChatProperties supportChatProperties;
-    private final AdminManagementServiceSrv.Iface adminManagementClient;
     private final Polyglot polyglot;
     private final TelegramClient telegramClient;
 

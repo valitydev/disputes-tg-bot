@@ -2,13 +2,13 @@ package dev.vality.disputes.tg.bot.provider.handler.event;
 
 import dev.vality.disputes.tg.bot.core.domain.tables.pojos.ProviderDispute;
 import dev.vality.disputes.tg.bot.core.domain.tables.pojos.ProviderReply;
+import dev.vality.disputes.tg.bot.core.dto.ProviderMessageDto;
 import dev.vality.disputes.tg.bot.core.event.ExternalReplyToDispute;
 import dev.vality.disputes.tg.bot.core.exception.NotFoundException;
 import dev.vality.disputes.tg.bot.core.util.TelegramUtil;
 import dev.vality.disputes.tg.bot.core.util.TextParsingUtil;
 import dev.vality.disputes.tg.bot.provider.dao.ProviderDisputeDao;
 import dev.vality.disputes.tg.bot.provider.dao.ProviderReplyDao;
-import dev.vality.disputes.tg.bot.core.dto.ProviderMessageDto;
 import dev.vality.disputes.tg.bot.provider.handler.ProviderMessageHandler;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;

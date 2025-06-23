@@ -54,7 +54,6 @@ public class DisableProviderChatHandler implements SupportMessageHandler {
         String messageText = extractText(update);
         try {
             var providerId = parse(messageText);
-            //var provider = dominantCacheService.getProvider(new ProviderRef(parsed.getProviderId()));
             providerChatDao.disable(providerId);
             log.info("[{}] Provider chat binding disabled {}",
                     update.getUpdateId(), TelegramUtil.extractUserInfo(update));

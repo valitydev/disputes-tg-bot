@@ -27,7 +27,6 @@ public class AddProviderChatHandler implements SupportMessageHandler {
     private final SupportChatProperties supportChatProperties;
     private final ProviderChatDao providerChatDao;
     private final TelegramClient telegramClient;
-    //private final DominantCacheServiceImpl dominantCacheService;
 
     @Override
     public boolean filter(Update update) {
@@ -55,7 +54,6 @@ public class AddProviderChatHandler implements SupportMessageHandler {
         String messageText = extractText(update);
         try {
             var providerChat = parse(messageText);
-            //var provider = dominantCacheService.getProvider(new ProviderRef(parsed.getProviderId()));
             providerChatDao.save(providerChat);
             var successReaction = TelegramUtil.getSetMessageReaction(update.getMessage().getChatId(),
                     update.getMessage().getMessageId(), "👍");

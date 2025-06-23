@@ -1,8 +1,7 @@
 package dev.vality.disputes.tg.bot.support.handler.command;
 
-import dev.vality.disputes.tg.bot.core.domain.tables.pojos.MerchantChat;
+import dev.vality.disputes.tg.bot.core.event.NewMerchantChat;
 import dev.vality.disputes.tg.bot.core.util.TelegramUtil;
-import dev.vality.disputes.tg.bot.merchant.dao.MerchantChatDao;
 import dev.vality.disputes.tg.bot.support.config.properties.SupportChatProperties;
 import dev.vality.disputes.tg.bot.support.exception.CommandValidationException;
 import dev.vality.disputes.tg.bot.support.handler.SupportMessageHandler;
@@ -10,6 +9,7 @@ import dev.vality.disputes.tg.bot.support.util.CommandValidationUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.groupadministration.GetChat;
 import org.telegram.telegrambots.meta.api.objects.Update;
@@ -25,8 +25,8 @@ public class AddMerchantChatHandler implements SupportMessageHandler {
     private static final String LATIN_SINGLE_LETTER = "/am ";
     private static final String FULL_COMMAND = "/add_merch ";
 
+    private final ApplicationEventPublisher events;
     private final SupportChatProperties supportChatProperties;
-    private final MerchantChatDao merchantChatDao;
     private final TelegramClient telegramClient;
 
     @Override
@@ -56,16 +56,10 @@ public class AddMerchantChatHandler implements SupportMessageHandler {
         log.info("[{}] Extracted text: {}", update.getUpdateId(), messageText);
         try {
             var chatId = getChatId(messageText);
-            var getChatRequest = GetChat.builder().chatId(chatId).build();
             //TODO: Return error if chat not found\telegramClient was kicked
             var chatInfo = telegramClient.execute(new GetChat(chatId.toString()));
             log.info("[{}] Got chat form telegram: {}", update.getUpdateId(), chatInfo);
-            MerchantChat merchantChat = new MerchantChat();
-            merchantChat.setChatId(chatInfo.getId());
-            merchantChat.setTitle(chatInfo.getTitle());
-            //var provider = dominantCacheService.getProvider(new ProviderRef(parsed.getProviderId()));
-            merchantChatDao.save(merchantChat);
-            log.info("[{}] Chat saved successfully", update.getUpdateId());
+            events.publishEvent(NewMerchantChat.builder().chatFullInfo(chatInfo).build());
             var successReaction = TelegramUtil.getSetMessageReaction(update.getMessage().getChatId(),
                     update.getMessage().getMessageId(), "👍");
             telegramClient.execute(successReaction);

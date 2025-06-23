@@ -1,5 +1,6 @@
 package dev.vality.disputes.tg.bot.core.util;
 
+import dev.vality.disputes.tg.bot.core.dto.File;
 import lombok.experimental.UtilityClass;
 import org.springframework.util.ObjectUtils;
 import org.telegram.telegrambots.meta.api.methods.reactions.SetMessageReaction;
@@ -11,6 +12,7 @@ import org.telegram.telegrambots.meta.api.objects.User;
 import org.telegram.telegrambots.meta.api.objects.message.Message;
 import org.telegram.telegrambots.meta.api.objects.reactions.ReactionTypeEmoji;
 
+import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Objects;
@@ -173,5 +175,11 @@ public class TelegramUtil {
         }
         int contextSizeBytes = contextString.getBytes(StandardCharsets.UTF_8).length;
         return contextSizeBytes <= maxCallbackContextSizeBytes;
+    }
+
+    public static InputFile convertToInputFile(File document, String fileName) {
+        InputFile file = new InputFile();
+        file.setMedia(new ByteArrayInputStream(document.getContent()), fileName);
+        return file;
     }
 }

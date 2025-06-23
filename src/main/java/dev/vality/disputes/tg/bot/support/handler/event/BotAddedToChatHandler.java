@@ -40,6 +40,7 @@ public class BotAddedToChatHandler implements SupportMessageHandler {
         log.debug("BotAddedToChatHandler is handling update: {}", update);
         var chat = update.getMyChatMember().getChat();
         log.info("Bot was added to chat: '{}' with id: '{}'", chat.getTitle(), chat.getId());
+        //TODO: Move to messages
         String text =
                 ("""
                         ➕Бот добавлен в чат

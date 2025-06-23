@@ -1,4 +1,4 @@
-package dev.vality.disputes.tg.bot.provider.exception;
+package dev.vality.disputes.tg.bot.core.exception;
 
 public class BadRequestException extends RuntimeException {
 

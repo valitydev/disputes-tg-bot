@@ -78,8 +78,6 @@ support:
       # Диспуты, которые подошли под паттерн
       review_disputes_patterns: 8
 
-
-
 bot:
   token: ${botToken}
   name: DisputesBot
