@@ -56,7 +56,7 @@ public class ScheduledDisputesStatusCheckerService {
 
     private void sendReply(MerchantDispute dispute) {
         var chat = merchantChatDao.getById(dispute.getChatId()).get();
-        var locale = chat.getLocale();
+        var locale = polyglot.getLocale(chat.getLocale());
         String reply = prepareStatusMessage(dispute, locale, polyglot);
         try {
             telegramClient.execute(TelegramUtil.buildPlainTextResponse(chat.getChatId(),

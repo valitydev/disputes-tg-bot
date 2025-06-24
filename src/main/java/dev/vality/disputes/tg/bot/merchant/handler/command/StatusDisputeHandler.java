@@ -15,15 +15,16 @@ import dev.vality.disputes.tg.bot.merchant.dto.MerchantMessageDto;
 import dev.vality.disputes.tg.bot.merchant.handler.MerchantMessageHandler;
 import dev.vality.disputes.tg.bot.merchant.service.external.DisputesApiService;
 import lombok.RequiredArgsConstructor;
-import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
 
 import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 
 import static dev.vality.disputes.tg.bot.core.util.TelegramUtil.extractText;
@@ -56,11 +57,10 @@ public class StatusDisputeHandler implements MerchantMessageHandler {
     }
 
     @Override
-    @SneakyThrows
-    public void handle(MerchantMessageDto message) {
+    public void handle(MerchantMessageDto message) throws TelegramApiException {
         Update update = message.getUpdate();
         String messageText = extractText(update);
-        String replyLocale = TelegramUtil.getUser(update).getLanguageCode();
+        Locale replyLocale = polyglot.getLocale(message.getMerchantChat().getLocale());
         Optional<DisputeInfoDto> paymentInfoOptional = TextParsingUtil.getDisputeInfo(messageText);
 
         if (paymentInfoOptional.isEmpty()) {
@@ -111,7 +111,7 @@ public class StatusDisputeHandler implements MerchantMessageHandler {
         }
     }
 
-    private String buildPlainTextResponse(List<MerchantDispute> disputes, String replyLocale) {
+    private String buildPlainTextResponse(List<MerchantDispute> disputes, Locale replyLocale) {
         return disputes.stream()
                 .max(Comparator.comparing(MerchantDispute::getCreatedAt))
                 .map(dispute -> prepareStatusMessage(dispute, replyLocale, polyglot))

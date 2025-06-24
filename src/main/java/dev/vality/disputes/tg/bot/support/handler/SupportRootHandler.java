@@ -31,7 +31,13 @@ public class SupportRootHandler implements TelegramEventHandler {
                 .filter(handler -> handler.filter(message))
                 .findFirst()
                 .ifPresentOrElse(
-                        handler -> handler.handle(message),
+                        handler -> {
+                            try {
+                                handler.handle(message);
+                            } catch (Exception e) {
+                                log.error("Unexpected exception occurred: ", e);
+                            }
+                        },
                         () -> log.info("[{}] No suitable support handler found for update: {}",
                                 message.getUpdateId(),
                                 message));

@@ -20,7 +20,6 @@ import dev.vality.disputes.tg.bot.merchant.exception.PaymentStatusRestrictionExc
 import dev.vality.disputes.tg.bot.merchant.handler.MerchantMessageHandler;
 import dev.vality.disputes.tg.bot.merchant.service.external.DisputesApiService;
 import lombok.RequiredArgsConstructor;
-import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -31,6 +30,7 @@ import org.telegram.telegrambots.meta.generics.TelegramClient;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -66,13 +66,12 @@ public class CreateDisputeHandler implements MerchantMessageHandler {
     }
 
     @Override
-    @SneakyThrows
-    public void handle(MerchantMessageDto message) {
+    public void handle(MerchantMessageDto message) throws TelegramApiException {
         log.info("[{}] Processing create dispute request", message.getUpdate().getUpdateId());
         Update update = message.getUpdate();
         String messageText = extractText(update);
         Optional<DisputeInfoDto> paymentInfoOptional = TextParsingUtil.getDisputeInfo(messageText);
-        String replyLocale = polyglot.getLocale(update, message.getMerchantChat().getLocale());
+        Locale replyLocale = polyglot.getLocale(message.getMerchantChat().getLocale());
         if (paymentInfoOptional.isEmpty()) {
             log.warn("[{}] Payment info not found, message text: {}", update.getUpdateId(), messageText);
             String reply = polyglot.getText(replyLocale, "error.input.invoice-missing");
@@ -83,7 +82,7 @@ public class CreateDisputeHandler implements MerchantMessageHandler {
     }
 
     public SendMessage handle(MerchantMessageDto message, TelegramClient telegramClient,
-                              DisputeInfoDto disputeInfo, String replyLocale) {
+                              DisputeInfoDto disputeInfo, Locale replyLocale) {
         var update = message.getUpdate();
         if (!hasAttachment(update)) {
             log.warn("[{}] Attachment missing", update.getUpdateId());

@@ -46,7 +46,13 @@ public class MerchantRootHandler implements TelegramEventHandler {
                 .filter(handler -> handler.filter(merchantMessage))
                 .findFirst()
                 .ifPresentOrElse(
-                        handler -> handler.handle(merchantMessage),
+                        handler -> {
+                            try {
+                                handler.handle(merchantMessage);
+                            } catch (Exception e) {
+                                log.error("Unexpected exception occurred: ", e);
+                            }
+                        },
                         () -> log.info("[{}] No suitable merchant handler found for update: {}",
                                 merchantMessage.getUpdate().getUpdateId(),
                                 merchantMessage));

@@ -6,12 +6,13 @@ import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 
 import java.math.BigDecimal;
+import java.util.Locale;
 
 @Slf4j
 @UtilityClass
 public class PolyglotUtil {
 
-    public static String prepareStatusMessage(MerchantDispute dispute, String replyLocale, Polyglot polyglot) {
+    public static String prepareStatusMessage(MerchantDispute dispute, Locale replyLocale, Polyglot polyglot) {
         var statusMessage = switch (dispute.getStatus()) {
             case pending -> String.format("%s ⏳", dispute.getStatus().getLiteral());
             case approved -> String.format("%s ✅", dispute.getStatus().getLiteral());

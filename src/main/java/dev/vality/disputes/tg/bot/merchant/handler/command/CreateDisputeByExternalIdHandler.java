@@ -9,12 +9,13 @@ import dev.vality.disputes.tg.bot.merchant.exception.BenderException;
 import dev.vality.disputes.tg.bot.merchant.handler.MerchantMessageHandler;
 import dev.vality.disputes.tg.bot.merchant.service.external.BenderService;
 import lombok.RequiredArgsConstructor;
-import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
 
+import java.util.Locale;
 import java.util.Optional;
 
 import static dev.vality.disputes.tg.bot.core.util.TelegramUtil.extractText;
@@ -46,16 +47,15 @@ public class CreateDisputeByExternalIdHandler implements MerchantMessageHandler 
     }
 
     @Override
-    @SneakyThrows
-    public void handle(MerchantMessageDto message) {
+    public void handle(MerchantMessageDto message) throws TelegramApiException {
         log.info("Processing create dispute by externalId request");
         Update update = message.getUpdate();
         String messageText = extractText(update);
-        String replyLocale = polyglot.getLocale(update);
+        Locale replyLocale = polyglot.getLocale();
         Optional<String> externalId = TextParsingUtil.getExternalId(messageText);
         if (externalId.isEmpty()) {
             log.warn("External id not found, message text: {}", messageText);
-            String reply = polyglot.getText(replyLocale, "error.input.external-missing");
+            String reply = polyglot.getText(polyglot.getLocale(), "error.input.external-missing");
             telegramClient.execute(TelegramUtil.buildPlainTextResponse(update, reply));
             return;
         }

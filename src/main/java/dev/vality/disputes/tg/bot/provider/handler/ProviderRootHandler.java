@@ -50,7 +50,13 @@ public class ProviderRootHandler implements TelegramEventHandler {
                 .filter(handler -> handler.filter(providerMessage))
                 .findFirst()
                 .ifPresentOrElse(
-                        handler -> handler.handle(providerMessage),
+                        handler -> {
+                            try {
+                                handler.handle(providerMessage);
+                            } catch (Exception e) {
+                                log.error("Unexpected exception occurred: ", e);
+                            }
+                        },
                         () -> log.info("[{}] No suitable provider handler found for update: {}",
                                 providerMessage.getUpdate().getUpdateId(),
                                 providerMessage));
