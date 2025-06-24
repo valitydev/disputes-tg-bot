@@ -1,4 +1,4 @@
-package dev.vality.disputes.tg.bot.provider.util;
+package dev.vality.disputes.tg.bot.core.util;
 
 import dev.vality.disputes.provider.DisputeParams;
 import dev.vality.disputes.provider.TransactionContext;
@@ -17,14 +17,6 @@ public class FormatUtil {
         return String.format("%s.%s", invoiceId, paymentID);
     }
 
-    public static String prepareTemplate(String template, DisputeParams disputeParams) {
-        return template.replaceAll("\\$\\{dispute_id}", disputeParams.disputeId)
-                .replaceAll("\\$\\{invoice_id}", disputeParams.getTransactionContext().getInvoiceId())
-                .replaceAll("\\$\\{payment_id}", disputeParams.getTransactionContext().getPaymentId())
-                .replaceAll("\\$\\{provider_trx_id}", disputeParams.getTransactionContext().getProviderTrxId())
-                .replaceAll("\\$\\{amount_formatted}", getFormattedAmount(disputeParams));
-    }
-
     public static String getFormattedAmount(DisputeParams disputeParams) {
         if (disputeParams.getCash().isEmpty()) {
             return "null";
@@ -38,4 +30,4 @@ public class FormatUtil {
                         .toPlainString();
         return "%s %s".formatted(formattedAmount, cash.getCurrency().getSymbolicCode());
     }
-}
+} 

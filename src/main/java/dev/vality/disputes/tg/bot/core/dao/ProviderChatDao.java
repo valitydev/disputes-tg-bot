@@ -1,4 +1,4 @@
-package dev.vality.disputes.tg.bot.provider.dao;
+package dev.vality.disputes.tg.bot.core.dao;
 
 import dev.vality.dao.impl.AbstractGenericDao;
 import dev.vality.disputes.tg.bot.core.domain.tables.pojos.ProviderChat;
@@ -53,4 +53,4 @@ public class ProviderChatDao extends AbstractGenericDao {
                 .where(PROVIDER_CHAT.PROVIDER_ID.eq(providerId));
         execute(set);
     }
-}
+} 

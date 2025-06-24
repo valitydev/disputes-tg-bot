@@ -4,7 +4,7 @@ import dev.vality.disputes.tg.bot.core.domain.tables.pojos.ProviderChat;
 import dev.vality.disputes.tg.bot.core.dto.ProviderMessageDto;
 import dev.vality.disputes.tg.bot.core.handler.TelegramEventHandler;
 import dev.vality.disputes.tg.bot.core.util.TelegramUtil;
-import dev.vality.disputes.tg.bot.provider.dao.ProviderChatDao;
+import dev.vality.disputes.tg.bot.core.dao.ProviderChatDao;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;

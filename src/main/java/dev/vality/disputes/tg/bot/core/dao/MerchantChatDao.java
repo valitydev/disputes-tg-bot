@@ -1,4 +1,4 @@
-package dev.vality.disputes.tg.bot.merchant.dao;
+package dev.vality.disputes.tg.bot.core.dao;
 
 import dev.vality.dao.impl.AbstractGenericDao;
 import dev.vality.disputes.tg.bot.core.domain.tables.pojos.MerchantChat;
@@ -51,4 +51,4 @@ public class MerchantChatDao extends AbstractGenericDao {
                 .where(MERCHANT_CHAT.CHAT_ID.eq(chatId));
         executeOne(set);
     }
-}
+} 

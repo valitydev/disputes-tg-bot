@@ -137,9 +137,7 @@ public class CreateDisputeHandler implements MerchantMessageHandler {
                 disputeInfo.setDisputeId(response.getSuccessResult().getDisputeId());
                 MerchantDispute dispute = buildDispute(message, disputeInfo);
                 merchantDisputeDao.save(dispute);
-                String reply = polyglot.getText(replyLocale, "dispute.created",
-                        dispute.getInvoiceId(),
-                        dispute.getExternalId());
+                String reply = buildDisputeCreatedReply(dispute, replyLocale);
                 return buildPlainTextResponse(update, reply);
             } else {
                 log.warn("[{}] This point should not be reached, check previous logs", update.getUpdateId());
@@ -168,6 +166,15 @@ public class CreateDisputeHandler implements MerchantMessageHandler {
         log.warn("[{}] This point should not be reached, check previous logs", update.getUpdateId());
         String reply = polyglot.getText(replyLocale, "error.unknown");
         return buildPlainTextResponse(update, reply);
+    }
+
+    private String buildDisputeCreatedReply(MerchantDispute dispute, Locale replyLocale) {
+        return dispute.getExternalId() == null
+                ? polyglot.getText(replyLocale, "dispute.created-wo-external-id",
+                        dispute.getInvoiceId()) :
+                polyglot.getText(replyLocale, "dispute.created",
+                        dispute.getInvoiceId(),
+                        dispute.getExternalId());
     }
 
     private void fillMissingPaymentInfo(DisputeInfoDto disputeInfoDto) throws InvoiceNotFound {

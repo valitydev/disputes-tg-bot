@@ -3,7 +3,7 @@ package dev.vality.disputes.tg.bot.support.handler.notification;
 import dev.vality.disputes.admin.DisputePoolingExpired;
 import dev.vality.disputes.tg.bot.core.service.Polyglot;
 import dev.vality.disputes.tg.bot.core.util.TelegramUtil;
-import dev.vality.disputes.tg.bot.provider.util.FormatUtil;
+import dev.vality.disputes.tg.bot.core.util.FormatUtil;
 import dev.vality.disputes.tg.bot.support.config.properties.SupportChatProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;

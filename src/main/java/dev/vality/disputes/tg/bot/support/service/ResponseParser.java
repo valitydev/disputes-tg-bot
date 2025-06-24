@@ -1,4 +1,4 @@
-package dev.vality.disputes.tg.bot.provider.service;
+package dev.vality.disputes.tg.bot.support.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -23,4 +23,4 @@ public class ResponseParser {
     private boolean match(List<String> phrases, String response) {
         return phrases.stream().anyMatch(response::contains);
     }
-}
+} 

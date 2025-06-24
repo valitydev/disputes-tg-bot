@@ -13,10 +13,10 @@ import dev.vality.disputes.tg.bot.core.handler.InternalEventHandler;
 import dev.vality.disputes.tg.bot.core.service.DominantCacheServiceImpl;
 import dev.vality.disputes.tg.bot.core.service.Polyglot;
 import dev.vality.disputes.tg.bot.core.util.TelegramUtil;
-import dev.vality.disputes.tg.bot.provider.dao.SupportDisputeReviewDao;
-import dev.vality.disputes.tg.bot.provider.service.ResponseParser;
-import dev.vality.disputes.tg.bot.provider.service.ResponsePattern;
-import dev.vality.disputes.tg.bot.provider.util.FormatUtil;
+import dev.vality.disputes.tg.bot.support.dao.SupportDisputeReviewDao;
+import dev.vality.disputes.tg.bot.support.service.ResponseParser;
+import dev.vality.disputes.tg.bot.support.service.ResponsePattern;
+import dev.vality.disputes.tg.bot.core.util.FormatUtil;
 import dev.vality.disputes.tg.bot.support.config.properties.SupportChatProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
@@ -63,7 +63,8 @@ public class ExternalReplyToDisputeHandler implements InternalEventHandler<Exter
                 telegramClient.execute(supportMessage);
             }
             case PENDING ->
-                    log.info("Provider reply '{}' matches 'pending' type, support won't be notified", replyText);
+                    log.info("Provider reply '{}' matches '{}' type, support won't be notified", replyText,
+                            pattern.getResponseType());
             case DECLINED -> {
                 CancelParams cancelParams = new CancelParams();
                 cancelParams.setInvoiceId(providerDispute.getInvoiceId());
@@ -129,6 +130,8 @@ public class ExternalReplyToDisputeHandler implements InternalEventHandler<Exter
         supportDispute.setCreatedAt(LocalDateTime.now());
         supportDispute.setProviderDisputeId(providerDispute.getId());
         supportDispute.setTgMessageId(Long.valueOf(deliveredMessage.getMessageId()));
+        supportDispute.setInvoiceId(providerDispute.getInvoiceId());
+        supportDispute.setPaymentId(providerDispute.getPaymentId());
         return supportDispute;
     }
 }

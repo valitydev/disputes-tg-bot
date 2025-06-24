@@ -4,8 +4,7 @@ import dev.vality.disputes.admin.AdminManagementServiceSrv;
 import dev.vality.disputes.admin.CancelParams;
 import dev.vality.disputes.admin.CancelParamsRequest;
 import dev.vality.disputes.tg.bot.core.exception.ConfigurationException;
-import dev.vality.disputes.tg.bot.provider.dao.ProviderDisputeDao;
-import dev.vality.disputes.tg.bot.provider.dao.SupportDisputeReviewDao;
+import dev.vality.disputes.tg.bot.support.dao.SupportDisputeReviewDao;
 import dev.vality.disputes.tg.bot.support.config.properties.SupportChatProperties;
 import dev.vality.disputes.tg.bot.support.handler.SupportMessageHandler;
 import lombok.RequiredArgsConstructor;
@@ -25,7 +24,6 @@ import static dev.vality.disputes.tg.bot.core.util.TelegramUtil.*;
 @RequiredArgsConstructor
 public class SupportRepliedToDisputeHandler implements SupportMessageHandler {
 
-    private final ProviderDisputeDao providerDisputeDao;
     private final SupportDisputeReviewDao supportDisputeReviewDao;
     private final AdminManagementServiceSrv.Iface adminManagementClient;
     private final SupportChatProperties supportChatProperties;
@@ -63,14 +61,8 @@ public class SupportRepliedToDisputeHandler implements SupportMessageHandler {
 
 
         String text = extractText(update);
-        if (dispute.getInvoiceId() == null) {
-            var providerDisputeInfo = providerDisputeDao.get(dispute.getProviderDisputeId());
-            cancelParams.setInvoiceId(providerDisputeInfo.getInvoiceId());
-            cancelParams.setPaymentId(providerDisputeInfo.getPaymentId());
-        } else {
-            cancelParams.setInvoiceId(dispute.getInvoiceId());
-            cancelParams.setPaymentId(dispute.getPaymentId());
-        }
+        cancelParams.setInvoiceId(dispute.getInvoiceId());
+        cancelParams.setPaymentId(dispute.getPaymentId());
         cancelParams.setCancelReason(text);
         cancelParams.setMapping(text);
 

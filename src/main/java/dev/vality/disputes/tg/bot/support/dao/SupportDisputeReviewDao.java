@@ -1,4 +1,4 @@
-package dev.vality.disputes.tg.bot.provider.dao;
+package dev.vality.disputes.tg.bot.support.dao;
 
 import dev.vality.dao.impl.AbstractGenericDao;
 import dev.vality.disputes.tg.bot.core.domain.tables.pojos.SupportDisputeReview;
@@ -54,4 +54,4 @@ public class SupportDisputeReviewDao extends AbstractGenericDao {
 
         return execute(query);
     }
-}
+} 

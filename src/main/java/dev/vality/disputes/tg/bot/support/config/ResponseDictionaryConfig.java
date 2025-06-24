@@ -1,9 +1,9 @@
-package dev.vality.disputes.tg.bot.provider.config;
+package dev.vality.disputes.tg.bot.support.config;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import dev.vality.disputes.tg.bot.provider.config.properties.DictionaryProperties;
-import dev.vality.disputes.tg.bot.provider.service.ResponsePattern;
+import dev.vality.disputes.tg.bot.support.config.properties.DictionaryProperties;
+import dev.vality.disputes.tg.bot.support.service.ResponsePattern;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -22,4 +22,4 @@ public class ResponseDictionaryConfig {
         return objectMapper.readValue(dictionaryProperties.getFile().getURL(), new TypeReference<>() {
         });
     }
-}
+} 

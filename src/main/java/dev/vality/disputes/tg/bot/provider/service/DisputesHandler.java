@@ -11,11 +11,12 @@ import dev.vality.disputes.tg.bot.core.service.Polyglot;
 import dev.vality.disputes.tg.bot.core.util.FileUtil;
 import dev.vality.disputes.tg.bot.core.util.InvoiceUtil;
 import dev.vality.disputes.tg.bot.core.util.TelegramUtil;
-import dev.vality.disputes.tg.bot.provider.dao.ProviderChatDao;
+import dev.vality.disputes.tg.bot.core.dao.ProviderChatDao;
 import dev.vality.disputes.tg.bot.provider.dao.ProviderDisputeDao;
 import dev.vality.disputes.tg.bot.provider.exception.DisputeCreationException;
 import dev.vality.disputes.tg.bot.provider.exception.NotSupportedOperationException;
-import dev.vality.disputes.tg.bot.provider.util.FormatUtil;
+import dev.vality.disputes.tg.bot.core.util.FormatUtil;
+import dev.vality.disputes.tg.bot.provider.util.TemplateUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -96,7 +97,7 @@ public class DisputesHandler implements ProviderDisputesServiceSrv.Iface {
 
         String text;
         if (chat.getTemplate() != null) {
-            text = FormatUtil.prepareTemplate(chat.getTemplate(), disputeParams);
+            text = TemplateUtil.prepareTemplate(chat.getTemplate(), disputeParams);
         } else {
             text = polyglot.getText("dispute.provider.create",
                     disputeParams.getTransactionContext().getProviderTrxId(),

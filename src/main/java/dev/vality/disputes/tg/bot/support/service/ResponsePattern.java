@@ -1,4 +1,4 @@
-package dev.vality.disputes.tg.bot.provider.service;
+package dev.vality.disputes.tg.bot.support.service;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
@@ -24,4 +24,4 @@ public class ResponsePattern {
         @JsonProperty("declined")
         DECLINED
     }
-}
+} 

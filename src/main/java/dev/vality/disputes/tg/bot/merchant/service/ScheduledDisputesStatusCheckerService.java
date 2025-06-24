@@ -4,7 +4,7 @@ import dev.vality.disputes.tg.bot.core.domain.enums.DisputeStatus;
 import dev.vality.disputes.tg.bot.core.domain.tables.pojos.MerchantDispute;
 import dev.vality.disputes.tg.bot.core.service.Polyglot;
 import dev.vality.disputes.tg.bot.core.util.TelegramUtil;
-import dev.vality.disputes.tg.bot.merchant.dao.MerchantChatDao;
+import dev.vality.disputes.tg.bot.core.dao.MerchantChatDao;
 import dev.vality.disputes.tg.bot.merchant.dao.MerchantDisputeDao;
 import dev.vality.disputes.tg.bot.merchant.handler.command.StatusDisputeHandler;
 import lombok.RequiredArgsConstructor;

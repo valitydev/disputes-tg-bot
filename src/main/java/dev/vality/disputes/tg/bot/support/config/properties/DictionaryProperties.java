@@ -1,4 +1,4 @@
-package dev.vality.disputes.tg.bot.provider.config.properties;
+package dev.vality.disputes.tg.bot.support.config.properties;
 
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
@@ -14,4 +14,4 @@ public class DictionaryProperties {
 
     @NotNull
     private Resource file;
-}
+} 
