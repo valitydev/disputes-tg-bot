@@ -4,9 +4,7 @@ import dev.vality.disputes.provider.DisputeParams;
 import dev.vality.disputes.tg.bot.core.dto.File;
 import dev.vality.disputes.tg.bot.core.exception.BadRequestException;
 import dev.vality.disputes.tg.bot.core.exception.FileStorageException;
-import dev.vality.disputes.tg.bot.core.util.FileUtil;
 import lombok.RequiredArgsConstructor;
-import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.hc.client5.http.classic.HttpClient;
 import org.apache.hc.client5.http.classic.methods.HttpGet;
@@ -15,11 +13,8 @@ import org.apache.hc.core5.http.HttpEntity;
 import org.apache.hc.core5.http.io.entity.EntityUtils;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
-import org.telegram.telegrambots.meta.api.objects.InputFile;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.util.UUID;
 
 @Slf4j
 @Service

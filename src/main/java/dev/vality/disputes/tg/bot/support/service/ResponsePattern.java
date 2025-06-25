@@ -10,7 +10,6 @@ import java.util.List;
 @Data
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class ResponsePattern {
-    //TODO: validation
     public ResponseType responseType;
     public String responseText;
     public String include;

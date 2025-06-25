@@ -1,5 +1,6 @@
 package dev.vality.disputes.tg.bot.support.handler.event;
 
+import dev.vality.disputes.tg.bot.core.service.Polyglot;
 import dev.vality.disputes.tg.bot.core.util.TelegramUtil;
 import dev.vality.disputes.tg.bot.support.config.properties.SupportChatProperties;
 import dev.vality.disputes.tg.bot.support.handler.SupportMessageHandler;
@@ -19,7 +20,7 @@ public class BotAddedToChatHandler implements SupportMessageHandler {
 
     private final SupportChatProperties supportChatProperties;
     private final TelegramClient telegramClient;
-
+    private final Polyglot polyglot;
 
     @Override
     public boolean filter(Update update) {
@@ -40,14 +41,8 @@ public class BotAddedToChatHandler implements SupportMessageHandler {
         log.debug("BotAddedToChatHandler is handling update: {}", update);
         var chat = update.getMyChatMember().getChat();
         log.info("Bot was added to chat: '{}' with id: '{}'", chat.getTitle(), chat.getId());
-        //TODO: Move to messages
-        String text =
-                ("""
-                        ➕Бот добавлен в чат
-                         Название чата: <code>%s</code>
-                         Идентификатор чата: <code>%d</code>
-                        """
-                ).formatted(chat.getTitle(), chat.getId());
+        
+        String text = polyglot.getText("support.info.bot-added-to-chat", chat.getTitle(), chat.getId());
         var response = TelegramUtil.buildPlainTextResponse(supportChatProperties.getId(), text);
         response.setMessageThreadId(supportChatProperties.getTopics().getServiceInfo());
         telegramClient.execute(response);

@@ -1,7 +1,7 @@
 package dev.vality.disputes.tg.bot.support.handler.command;
 
-import dev.vality.disputes.tg.bot.core.util.TelegramUtil;
 import dev.vality.disputes.tg.bot.core.dao.ProviderChatDao;
+import dev.vality.disputes.tg.bot.core.util.TelegramUtil;
 import dev.vality.disputes.tg.bot.support.config.properties.SupportChatProperties;
 import dev.vality.disputes.tg.bot.support.exception.CommandValidationException;
 import dev.vality.disputes.tg.bot.support.handler.SupportMessageHandler;
@@ -26,7 +26,6 @@ public class DisableProviderChatHandler implements SupportMessageHandler {
     private final SupportChatProperties supportChatProperties;
     private final ProviderChatDao providerChatDao;
     private final TelegramClient telegramClient;
-    //private final DominantCacheServiceImpl dominantCacheService;
 
     @Override
     public boolean filter(Update update) {

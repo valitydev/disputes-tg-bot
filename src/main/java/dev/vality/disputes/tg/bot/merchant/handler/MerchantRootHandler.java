@@ -1,9 +1,9 @@
 package dev.vality.disputes.tg.bot.merchant.handler;
 
+import dev.vality.disputes.tg.bot.core.dao.MerchantChatDao;
 import dev.vality.disputes.tg.bot.core.domain.tables.pojos.MerchantChat;
 import dev.vality.disputes.tg.bot.core.handler.TelegramEventHandler;
 import dev.vality.disputes.tg.bot.core.util.TelegramUtil;
-import dev.vality.disputes.tg.bot.core.dao.MerchantChatDao;
 import dev.vality.disputes.tg.bot.merchant.dto.MerchantMessageDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

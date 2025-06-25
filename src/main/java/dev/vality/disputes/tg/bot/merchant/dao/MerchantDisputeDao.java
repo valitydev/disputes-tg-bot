@@ -5,7 +5,6 @@ import dev.vality.disputes.tg.bot.core.domain.enums.DisputeStatus;
 import dev.vality.disputes.tg.bot.core.domain.tables.pojos.MerchantDispute;
 import dev.vality.disputes.tg.bot.core.dto.DisputeInfoDto;
 import dev.vality.mapper.RecordRowMapper;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.stereotype.Component;
@@ -22,7 +21,6 @@ public class MerchantDisputeDao extends AbstractGenericDao {
 
     private final RowMapper<MerchantDispute> disputeRowMapper;
 
-    @Autowired
     public MerchantDisputeDao(DataSource dataSource) {
         super(dataSource);
         disputeRowMapper = new RecordRowMapper<>(MERCHANT_DISPUTE, MerchantDispute.class);

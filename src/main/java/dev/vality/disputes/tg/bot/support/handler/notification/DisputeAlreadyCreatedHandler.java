@@ -2,8 +2,8 @@ package dev.vality.disputes.tg.bot.support.handler.notification;
 
 import dev.vality.disputes.admin.DisputeAlreadyCreated;
 import dev.vality.disputes.tg.bot.core.service.Polyglot;
-import dev.vality.disputes.tg.bot.core.util.TelegramUtil;
 import dev.vality.disputes.tg.bot.core.util.FormatUtil;
+import dev.vality.disputes.tg.bot.core.util.TelegramUtil;
 import dev.vality.disputes.tg.bot.support.config.properties.SupportChatProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
@@ -23,7 +23,6 @@ public class DisputeAlreadyCreatedHandler implements NotificationHandler<Dispute
     @Override
     @SneakyThrows
     public void handle(DisputeAlreadyCreated notification) {
-        //TODO: text check
         String reply = polyglot.getText("dispute.support.already-created",
                 FormatUtil.formatPaymentId(notification.getInvoiceId(), notification.getPaymentId()));
         var messageToSupport = TelegramUtil.buildPlainTextResponse(supportChatProperties.getId(), reply);

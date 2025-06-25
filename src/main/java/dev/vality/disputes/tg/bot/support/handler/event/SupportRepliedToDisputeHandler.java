@@ -5,7 +5,6 @@ import dev.vality.disputes.admin.CancelParams;
 import dev.vality.disputes.admin.CancelParamsRequest;
 import dev.vality.disputes.tg.bot.core.exception.ConfigurationException;
 import dev.vality.disputes.tg.bot.support.dao.SupportDisputeReviewDao;
-import dev.vality.disputes.tg.bot.support.config.properties.SupportChatProperties;
 import dev.vality.disputes.tg.bot.support.handler.SupportMessageHandler;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
@@ -26,7 +25,6 @@ public class SupportRepliedToDisputeHandler implements SupportMessageHandler {
 
     private final SupportDisputeReviewDao supportDisputeReviewDao;
     private final AdminManagementServiceSrv.Iface adminManagementClient;
-    private final SupportChatProperties supportChatProperties;
     private final TelegramClient telegramClient;
 
     @Override
@@ -42,7 +40,7 @@ public class SupportRepliedToDisputeHandler implements SupportMessageHandler {
         }
         // Is reply to dispute message
         Long replyToMessageId = Long.valueOf(update.getMessage().getReplyToMessage().getMessageId());
-        return supportDisputeReviewDao.isReplyToDisputeMessage(replyToMessageId, supportChatProperties.getId());
+        return supportDisputeReviewDao.isReplyToDisputeMessage(replyToMessageId);
     }
 
     @Override
@@ -51,15 +49,11 @@ public class SupportRepliedToDisputeHandler implements SupportMessageHandler {
 
         Long replyToMessageId =
                 Long.valueOf(update.getMessage().getReplyToMessage().getMessageId());
-        var optionalDispute = supportDisputeReviewDao.getReplyToMessageId(replyToMessageId,
-                supportChatProperties.getId());
+        var optionalDispute = supportDisputeReviewDao.getReplyToMessageId(replyToMessageId);
         var dispute = optionalDispute.orElseThrow(
                 () -> new ConfigurationException("Unreachable point, check application configuration"));
 
         CancelParams cancelParams = new CancelParams();
-        //TODO: Extract dispute info
-
-
         String text = extractText(update);
         cancelParams.setInvoiceId(dispute.getInvoiceId());
         cancelParams.setPaymentId(dispute.getPaymentId());

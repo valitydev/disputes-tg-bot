@@ -6,11 +6,11 @@ import dev.vality.disputes.tg.bot.core.domain.tables.pojos.SupportDisputeReview;
 import dev.vality.disputes.tg.bot.core.service.DominantCacheServiceImpl;
 import dev.vality.disputes.tg.bot.core.service.HellgateService;
 import dev.vality.disputes.tg.bot.core.service.Polyglot;
+import dev.vality.disputes.tg.bot.core.util.FormatUtil;
 import dev.vality.disputes.tg.bot.core.util.InvoiceUtil;
 import dev.vality.disputes.tg.bot.core.util.TelegramUtil;
-import dev.vality.disputes.tg.bot.support.dao.SupportDisputeReviewDao;
-import dev.vality.disputes.tg.bot.core.util.FormatUtil;
 import dev.vality.disputes.tg.bot.support.config.properties.SupportChatProperties;
+import dev.vality.disputes.tg.bot.support.dao.SupportDisputeReviewDao;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -44,8 +44,6 @@ public class DisputeManualPendingHandler implements NotificationHandler<DisputeM
         }
     }
 
-
-    // TODO: mostly copied from ProviderRepliedToDisputeHandler, unify if possible
     @SneakyThrows
     private SendMessage getSupportMessage(DisputeManualPending notification) {
         String paymentId = FormatUtil.formatPaymentId(notification.invoiceId,

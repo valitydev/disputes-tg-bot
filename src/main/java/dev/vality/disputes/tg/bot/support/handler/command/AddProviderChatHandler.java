@@ -1,8 +1,8 @@
 package dev.vality.disputes.tg.bot.support.handler.command;
 
+import dev.vality.disputes.tg.bot.core.dao.ProviderChatDao;
 import dev.vality.disputes.tg.bot.core.domain.tables.pojos.ProviderChat;
 import dev.vality.disputes.tg.bot.core.util.TelegramUtil;
-import dev.vality.disputes.tg.bot.core.dao.ProviderChatDao;
 import dev.vality.disputes.tg.bot.support.config.properties.SupportChatProperties;
 import dev.vality.disputes.tg.bot.support.exception.CommandValidationException;
 import dev.vality.disputes.tg.bot.support.handler.SupportMessageHandler;

@@ -24,12 +24,11 @@ public class SupportDisputeReviewDao extends AbstractGenericDao {
         disputeRowMapper = new RecordRowMapper<>(SUPPORT_DISPUTE_REVIEW, SupportDisputeReview.class);
     }
 
-    public boolean isReplyToDisputeMessage(Long replyToMessageId, Long chatId) {
-        return getReplyToMessageId(replyToMessageId, chatId).isPresent();
+    public boolean isReplyToDisputeMessage(Long replyToMessageId) {
+        return getReplyToMessageId(replyToMessageId).isPresent();
     }
 
-    public Optional<SupportDisputeReview> getReplyToMessageId(Long replyToMessageId, Long chatId) {
-        //TODO: Доработать логику запроса
+    public Optional<SupportDisputeReview> getReplyToMessageId(Long replyToMessageId) {
         var query = getDslContext().selectFrom(SUPPORT_DISPUTE_REVIEW)
                 .where(SUPPORT_DISPUTE_REVIEW.TG_MESSAGE_ID.eq(replyToMessageId));
         return Optional.ofNullable(fetchOne(query, disputeRowMapper));
