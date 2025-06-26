@@ -1,5 +1,6 @@
 package dev.vality.disputes.tg.bot.support.service;
 
+import dev.vality.disputes.tg.bot.support.config.model.ResponsePattern;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

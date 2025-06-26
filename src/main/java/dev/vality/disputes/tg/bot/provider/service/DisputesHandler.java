@@ -5,7 +5,7 @@ import dev.vality.disputes.provider.*;
 import dev.vality.disputes.tg.bot.core.dao.ProviderChatDao;
 import dev.vality.disputes.tg.bot.core.domain.tables.pojos.ProviderChat;
 import dev.vality.disputes.tg.bot.core.event.DisputeWithoutProviderChat;
-import dev.vality.disputes.tg.bot.core.service.HellgateService;
+import dev.vality.disputes.tg.bot.core.service.external.HellgateService;
 import dev.vality.disputes.tg.bot.core.util.InvoiceUtil;
 import dev.vality.disputes.tg.bot.provider.exception.DisputeCreationException;
 import dev.vality.disputes.tg.bot.provider.exception.NotSupportedOperationException;

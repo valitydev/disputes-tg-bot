@@ -1,4 +1,4 @@
-package dev.vality.disputes.tg.bot.core.service;
+package dev.vality.disputes.tg.bot.core.service.external;
 
 import dev.vality.damsel.payment_processing.EventRange;
 import dev.vality.damsel.payment_processing.Invoice;

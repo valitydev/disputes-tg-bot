@@ -1,4 +1,4 @@
-package dev.vality.disputes.tg.bot.support.service;
+package dev.vality.disputes.tg.bot.support.config.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;

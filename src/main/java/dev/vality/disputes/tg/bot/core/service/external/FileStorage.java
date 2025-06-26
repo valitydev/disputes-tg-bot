@@ -1,4 +1,4 @@
-package dev.vality.disputes.tg.bot.core.service;
+package dev.vality.disputes.tg.bot.core.service.external;
 
 import dev.vality.disputes.provider.DisputeParams;
 import dev.vality.disputes.tg.bot.core.dto.File;

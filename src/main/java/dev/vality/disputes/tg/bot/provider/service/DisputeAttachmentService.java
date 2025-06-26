@@ -1,7 +1,7 @@
 package dev.vality.disputes.tg.bot.provider.service;
 
 import dev.vality.disputes.provider.DisputeParams;
-import dev.vality.disputes.tg.bot.core.service.FileStorage;
+import dev.vality.disputes.tg.bot.core.service.external.FileStorage;
 import dev.vality.disputes.tg.bot.core.util.FileUtil;
 import dev.vality.disputes.tg.bot.core.util.TelegramUtil;
 import lombok.RequiredArgsConstructor;

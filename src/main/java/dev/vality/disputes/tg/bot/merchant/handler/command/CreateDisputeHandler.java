@@ -6,7 +6,7 @@ import dev.vality.disputes.merchant.DisputeParams;
 import dev.vality.disputes.tg.bot.core.domain.enums.DisputeStatus;
 import dev.vality.disputes.tg.bot.core.domain.tables.pojos.MerchantDispute;
 import dev.vality.disputes.tg.bot.core.dto.DisputeInfoDto;
-import dev.vality.disputes.tg.bot.core.service.HellgateService;
+import dev.vality.disputes.tg.bot.core.service.external.HellgateService;
 import dev.vality.disputes.tg.bot.core.service.Polyglot;
 import dev.vality.disputes.tg.bot.core.util.TelegramUtil;
 import dev.vality.disputes.tg.bot.core.util.TextParsingUtil;
@@ -19,6 +19,7 @@ import dev.vality.disputes.tg.bot.merchant.exception.PaymentNotStartedException;
 import dev.vality.disputes.tg.bot.merchant.exception.PaymentStatusRestrictionException;
 import dev.vality.disputes.tg.bot.merchant.handler.MerchantMessageHandler;
 import dev.vality.disputes.tg.bot.merchant.service.external.DisputesApiService;
+import dev.vality.disputes.tg.bot.merchant.util.PolyglotUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -106,12 +107,7 @@ public class CreateDisputeHandler implements MerchantMessageHandler {
         if (disputeOptional.isPresent()) {
             var dispute = disputeOptional.get();
             log.info("[{}] Dispute has been already created", update.getUpdateId());
-            String reply = polyglot.getText(replyLocale, "dispute.status",
-                    dispute.getId(),
-                    dispute.getInvoiceId(),
-                    dispute.getExternalId(),
-                    dispute.getStatus().getLiteral(),
-                    dispute.getUpdatedAt());
+            String reply = PolyglotUtil.prepareStatusMessage(dispute, replyLocale, polyglot);
             return buildPlainTextResponse(update, reply);
         }
 

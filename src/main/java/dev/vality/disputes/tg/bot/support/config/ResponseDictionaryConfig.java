@@ -2,8 +2,8 @@ package dev.vality.disputes.tg.bot.support.config;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import dev.vality.disputes.tg.bot.support.config.model.ResponsePattern;
 import dev.vality.disputes.tg.bot.support.config.properties.DictionaryProperties;
-import dev.vality.disputes.tg.bot.support.service.ResponsePattern;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

@@ -2,7 +2,7 @@ package dev.vality.disputes.tg.bot.support.handler.event.internal;
 
 import dev.vality.disputes.tg.bot.core.event.DisputeWithoutProviderChat;
 import dev.vality.disputes.tg.bot.core.handler.InternalEventHandler;
-import dev.vality.disputes.tg.bot.core.service.DominantCacheServiceImpl;
+import dev.vality.disputes.tg.bot.core.service.external.DominantCacheServiceImpl;
 import dev.vality.disputes.tg.bot.core.service.Polyglot;
 import dev.vality.disputes.tg.bot.support.config.properties.SupportChatProperties;
 import lombok.RequiredArgsConstructor;
