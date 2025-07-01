@@ -75,14 +75,9 @@ public class ProviderRepliedToDisputeHandler implements ProviderMessageHandler {
                 Instant.ofEpochSecond(message.getUpdate().getMessage().getDate()), ZoneOffset.UTC));
         providerReply.setUsername(TelegramUtil.extractUserInfo(message.getUpdate()));
         providerReplyDao.save(providerReply);
-        try {
-            events.publishEvent(ExternalReplyToDispute.builder()
-                    .message(message)
-                    .providerDispute(providerDispute).build());
-        } catch (Exception e) {
-            log.error("oops", e);
-            throw new RuntimeException(e);
-        }
+        events.publishEvent(ExternalReplyToDispute.builder()
+                .message(message)
+                .providerDispute(providerDispute).build());
     }
 
     private ProviderDispute getProviderDispute(ProviderMessageDto message) {

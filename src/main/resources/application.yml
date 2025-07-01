@@ -1,8 +1,6 @@
 server:
   port: ${server.port}
 management:
-  security:
-    flag: false
   server:
     port: ${management.port}
   metrics:
@@ -12,9 +10,9 @@ management:
     health:
       show-details: always
     metrics:
-      enabled: true
+      access: unrestricted
     prometheus:
-      enabled: true
+      access: unrestricted
   endpoints:
     web:
       exposure:
