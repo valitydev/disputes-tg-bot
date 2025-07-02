@@ -7,8 +7,8 @@ import dev.vality.disputes.tg.bot.core.service.Polyglot;
 import dev.vality.disputes.tg.bot.support.config.properties.SupportChatProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
-import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.event.TransactionalEventListener;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
 
 import static dev.vality.disputes.tg.bot.core.util.TelegramUtil.buildTextWithAttachmentResponse;
@@ -24,7 +24,7 @@ public class CreateDisputeWithoutChatHandler implements InternalEventHandler<Dis
 
     @Override
     @SneakyThrows
-    @EventListener
+    @TransactionalEventListener
     public void handle(DisputeWithoutProviderChat event) {
         var provider = dominantCacheService.getProvider(event.getProviderRef());
         var disputeParams = event.getDisputeParams();

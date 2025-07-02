@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
 
@@ -45,6 +46,7 @@ public class SupportRepliedToDisputeHandler implements SupportMessageHandler {
 
     @Override
     @SneakyThrows
+    @Transactional
     public void handle(Update update) {
 
         Long replyToMessageId =

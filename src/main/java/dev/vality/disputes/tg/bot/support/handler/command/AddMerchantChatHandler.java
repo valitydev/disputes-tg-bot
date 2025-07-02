@@ -1,9 +1,10 @@
 package dev.vality.disputes.tg.bot.support.handler.command;
 
 import dev.vality.disputes.tg.bot.core.event.NewMerchantChat;
+import dev.vality.disputes.tg.bot.core.service.TelegramApiService;
 import dev.vality.disputes.tg.bot.core.util.TelegramUtil;
 import dev.vality.disputes.tg.bot.support.config.properties.SupportChatProperties;
-import dev.vality.disputes.tg.bot.support.exception.CommandValidationException;
+import dev.vality.disputes.tg.bot.support.dto.AddMerchantChatCommand;
 import dev.vality.disputes.tg.bot.support.handler.SupportMessageHandler;
 import dev.vality.disputes.tg.bot.support.util.CommandValidationUtil;
 import lombok.RequiredArgsConstructor;
@@ -11,9 +12,9 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
-import org.telegram.telegrambots.meta.api.methods.groupadministration.GetChat;
 import org.telegram.telegrambots.meta.api.objects.Update;
-import org.telegram.telegrambots.meta.generics.TelegramClient;
+
+import java.util.Optional;
 
 import static dev.vality.disputes.tg.bot.core.util.TelegramUtil.extractText;
 
@@ -27,7 +28,7 @@ public class AddMerchantChatHandler implements SupportMessageHandler {
 
     private final ApplicationEventPublisher events;
     private final SupportChatProperties supportChatProperties;
-    private final TelegramClient telegramClient;
+    private final TelegramApiService telegramApiService;
 
     @Override
     public boolean filter(Update update) {
@@ -54,30 +55,42 @@ public class AddMerchantChatHandler implements SupportMessageHandler {
                 update.getUpdateId(), TelegramUtil.extractUserInfo(update));
         String messageText = extractText(update);
         log.info("[{}] Extracted text: {}", update.getUpdateId(), messageText);
-        try {
-            var chatId = getChatId(messageText);
-            //TODO: Return error if chat not found\telegramClient was kicked
-            var chatInfo = telegramClient.execute(new GetChat(chatId.toString()));
-            log.info("[{}] Got chat form telegram: {}", update.getUpdateId(), chatInfo);
-            events.publishEvent(NewMerchantChat.builder().chatFullInfo(chatInfo).build());
-            var successReaction = TelegramUtil.getSetMessageReaction(update.getMessage().getChatId(),
-                    update.getMessage().getMessageId(), "👍");
-            telegramClient.execute(successReaction);
-        } catch (CommandValidationException e) {
-            log.warn("Unable to process user input", e);
-            var response = TelegramUtil.buildPlainTextResponse(supportChatProperties.getId(), e.getMessage());
-            response.setReplyToMessageId(update.getMessage().getMessageId());
-            response.setMessageThreadId(update.getMessage().getMessageThreadId());
-            telegramClient.execute(response);
+        var addMerchantChatCommandOpt = parse(update);
+        if (addMerchantChatCommandOpt.isEmpty()) {
+            log.warn("Unable to parse addMerchantChatCommand, check previous logs");
+            return;
         }
+        var addMerchantChatCommand = addMerchantChatCommandOpt.get();
+        var chatInfoOpt = telegramApiService.getChatInfo(addMerchantChatCommand.getChatId());
+        if (chatInfoOpt.isEmpty()) {
+            log.warn("Chat not found in Telegram: {}", addMerchantChatCommand.getChatId());
+            telegramApiService.sendReplyTo("error.chat.not-found", update);
+            return;
+        }
+        var chatInfo = chatInfoOpt.get();
+        log.info("[{}] Got chat form telegram: {}", update.getUpdateId(), chatInfo);
+        events.publishEvent(NewMerchantChat.builder().chatFullInfo(chatInfo).build());
+        telegramApiService.setThumbUpReaction(update.getMessage().getChatId(), update.getMessage().getMessageId());
     }
 
-    private Long getChatId(String text) throws CommandValidationException {
-        String[] tokens = text.split("\\s+", 3);
-        if (tokens.length < 2) {
-            throw new CommandValidationException("Expected 1 arguments, got %s".formatted(tokens.length - 1));
+    private Optional<AddMerchantChatCommand> parse(Update update) {
+        String messageText = extractText(update);
+        String[] parts = messageText.split("\\s+", 3);
+        if (parts.length < 2) {
+            log.warn("Invalid command format: {}", messageText);
+            telegramApiService.sendReplyTo("error.input.invalid-add-merchant-chat-command", update);
+            return Optional.empty();
         }
-        return CommandValidationUtil.extractLong(tokens[1], "Chat ID");
+        long chatId;
+
+        try {
+            chatId = CommandValidationUtil.extractLong(parts[1], "Chat ID");
+        } catch (Exception e) {
+            log.warn("Invalid chat ID: {}", parts[1], e);
+            telegramApiService.sendReplyTo("error.input.invalid-chat-id", update);
+            return Optional.empty();
+        }
+        return Optional.of(AddMerchantChatCommand.builder().chatId(chatId).build());
     }
 
 }

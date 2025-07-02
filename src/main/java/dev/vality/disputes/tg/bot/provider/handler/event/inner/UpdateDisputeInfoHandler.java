@@ -5,8 +5,8 @@ import dev.vality.disputes.tg.bot.core.handler.InternalEventHandler;
 import dev.vality.disputes.tg.bot.provider.dao.ProviderDisputeDao;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.event.TransactionalEventListener;
 
 @Slf4j
 @Component
@@ -15,7 +15,7 @@ public class UpdateDisputeInfoHandler implements InternalEventHandler<DisputeInf
 
     private final ProviderDisputeDao providerDisputeDao;
 
-    @EventListener
+    @TransactionalEventListener
     @Override
     public void handle(DisputeInfoDto event) {
         log.info("Updating provider dispute info: {}", event);

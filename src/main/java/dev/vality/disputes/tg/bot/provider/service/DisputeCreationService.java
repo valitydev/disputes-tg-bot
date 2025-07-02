@@ -7,6 +7,7 @@ import dev.vality.disputes.tg.bot.provider.dao.ProviderDisputeDao;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -18,10 +19,12 @@ public class DisputeCreationService {
 
     private final ProviderDisputeDao providerDisputeDao;
 
+    @Transactional
     public UUID createProviderDispute(DisputeParams disputeParams) {
         return createProviderDispute(disputeParams, null);
     }
 
+    @Transactional
     public UUID createProviderDispute(DisputeParams disputeParams, ProviderChat chat) {
         ProviderDispute providerDispute = buildProviderDispute(disputeParams, chat);
         UUID disputeId = providerDisputeDao.save(providerDispute);

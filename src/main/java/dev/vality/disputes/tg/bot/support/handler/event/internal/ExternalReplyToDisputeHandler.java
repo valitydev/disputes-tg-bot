@@ -21,8 +21,9 @@ import dev.vality.disputes.tg.bot.support.config.model.ResponsePattern;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.event.TransactionalEventListener;
 import org.telegram.telegrambots.meta.api.methods.send.SendDocument;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.InputFile;
@@ -50,7 +51,8 @@ public class ExternalReplyToDisputeHandler implements InternalEventHandler<Exter
 
     @SneakyThrows
     @Override
-    @EventListener
+    @TransactionalEventListener
+    @Transactional
     public void handle(ExternalReplyToDispute event) {
         var replyText = TelegramUtil.extractText(event.getMessage().getUpdate());
         var message = event.getMessage();

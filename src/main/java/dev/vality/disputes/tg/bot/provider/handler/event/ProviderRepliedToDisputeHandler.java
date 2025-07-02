@@ -15,6 +15,8 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.event.TransactionalEventListener;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -65,6 +67,7 @@ public class ProviderRepliedToDisputeHandler implements ProviderMessageHandler {
 
     @Override
     @SneakyThrows
+    @Transactional
     public void handle(ProviderMessageDto message) {
         String replyText = TelegramUtil.extractText(message.getUpdate());
         var providerDispute = getProviderDispute(message);

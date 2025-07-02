@@ -23,6 +23,7 @@ import dev.vality.disputes.tg.bot.merchant.util.PolyglotUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
@@ -67,6 +68,7 @@ public class CreateDisputeHandler implements MerchantMessageHandler {
     }
 
     @Override
+    @Transactional
     public void handle(MerchantMessageDto message) throws TelegramApiException {
         log.info("[{}] Processing create dispute request", message.getUpdate().getUpdateId());
         Update update = message.getUpdate();
@@ -82,6 +84,7 @@ public class CreateDisputeHandler implements MerchantMessageHandler {
         telegramClient.execute(handle(message, telegramClient, paymentInfoOptional.get(), replyLocale));
     }
 
+    @Transactional
     public SendMessage handle(MerchantMessageDto message, TelegramClient telegramClient,
                               DisputeInfoDto disputeInfo, Locale replyLocale) {
         var update = message.getUpdate();

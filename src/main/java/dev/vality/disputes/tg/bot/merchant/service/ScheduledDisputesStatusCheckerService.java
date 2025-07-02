@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
 
 import java.util.List;
@@ -34,6 +35,7 @@ public class ScheduledDisputesStatusCheckerService {
     private int batchSize;
 
     @Scheduled(fixedDelayString = "${dispute.fixedDelayStatus}", initialDelayString = "${dispute.initialDelayStatus}")
+    @Transactional
     public void processPendingDisputes() {
         log.debug("Updating pending disputes statuses");
         try {

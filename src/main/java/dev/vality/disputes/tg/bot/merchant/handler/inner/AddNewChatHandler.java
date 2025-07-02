@@ -6,8 +6,9 @@ import dev.vality.disputes.tg.bot.core.event.NewMerchantChat;
 import dev.vality.disputes.tg.bot.core.handler.InternalEventHandler;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.event.TransactionalEventListener;
 
 @Slf4j
 @Component
@@ -17,7 +18,8 @@ public class AddNewChatHandler implements InternalEventHandler<NewMerchantChat> 
     private final MerchantChatDao merchantChatDao;
 
     @Override
-    @EventListener
+    @TransactionalEventListener
+    @Transactional
     public void handle(NewMerchantChat event) {
         MerchantChat merchantChat = new MerchantChat();
         merchantChat.setChatId(event.getChatFullInfo().getId());

@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
 
@@ -47,6 +48,7 @@ public class DisableProviderChatHandler implements SupportMessageHandler {
 
     @Override
     @SneakyThrows
+    @Transactional
     public void handle(Update update) {
         log.info("[{}] Processing disable provider chat binding request from {}",
                 update.getUpdateId(), TelegramUtil.extractUserInfo(update));
