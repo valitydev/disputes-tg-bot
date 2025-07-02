@@ -58,7 +58,7 @@ provider:
   dictionary:
     file: classpath:filter/provider/response_filter.json
 
-support:
+admin:
   chat:
     id: 1
     topics:
