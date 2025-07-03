@@ -313,7 +313,7 @@
                             <inputSchema>${db.schema}</inputSchema>
                         </database>
                         <target>
-                            <packageName>dev.vality.disputes.tg.bot.core.domain</packageName>
+                            <packageName>dev.vality.disputes.tg.bot.domain</packageName>
                             <directory>target/generated-sources/jooq</directory>
                         </target>
                     </generator>

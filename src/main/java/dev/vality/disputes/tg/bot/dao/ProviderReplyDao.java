@@ -1,7 +1,7 @@
 package dev.vality.disputes.tg.bot.dao;
 
 import dev.vality.dao.impl.AbstractGenericDao;
-import dev.vality.disputes.tg.bot.core.domain.tables.pojos.ProviderReply;
+import dev.vality.disputes.tg.bot.domain.tables.pojos.ProviderReply;
 import dev.vality.mapper.RecordRowMapper;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Component;
@@ -10,7 +10,7 @@ import javax.sql.DataSource;
 import java.util.List;
 import java.util.UUID;
 
-import static dev.vality.disputes.tg.bot.core.domain.Tables.PROVIDER_REPLY;
+import static dev.vality.disputes.tg.bot.domain.Tables.PROVIDER_REPLY;
 
 
 @Component

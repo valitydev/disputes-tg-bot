@@ -1,6 +1,6 @@
 package dev.vality.disputes.tg.bot.dto;
 
-import dev.vality.disputes.tg.bot.core.domain.tables.pojos.MerchantChat;
+import dev.vality.disputes.tg.bot.domain.tables.pojos.MerchantChat;
 import lombok.Builder;
 import lombok.Getter;
 

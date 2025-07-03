@@ -1,7 +1,7 @@
 package dev.vality.disputes.tg.bot.handler.admin.command;
 
 import dev.vality.disputes.tg.bot.config.properties.AdminChatProperties;
-import dev.vality.disputes.tg.bot.core.domain.tables.pojos.MerchantChat;
+import dev.vality.disputes.tg.bot.domain.tables.pojos.MerchantChat;
 import dev.vality.disputes.tg.bot.dao.MerchantChatDao;
 import dev.vality.disputes.tg.bot.dto.AddMerchantChatCommand;
 import dev.vality.disputes.tg.bot.handler.admin.AdminMessageHandler;

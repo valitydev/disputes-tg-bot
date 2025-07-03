@@ -1,8 +1,8 @@
 package dev.vality.disputes.tg.bot.dao;
 
 import dev.vality.dao.impl.AbstractGenericDao;
-import dev.vality.disputes.tg.bot.core.domain.enums.DisputeStatus;
-import dev.vality.disputes.tg.bot.core.domain.tables.pojos.MerchantDispute;
+import dev.vality.disputes.tg.bot.domain.enums.DisputeStatus;
+import dev.vality.disputes.tg.bot.domain.tables.pojos.MerchantDispute;
 import dev.vality.disputes.tg.bot.dto.DisputeInfoDto;
 import dev.vality.mapper.RecordRowMapper;
 import org.springframework.jdbc.core.RowMapper;
@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import static dev.vality.disputes.tg.bot.core.domain.tables.MerchantDispute.MERCHANT_DISPUTE;
+import static dev.vality.disputes.tg.bot.domain.tables.MerchantDispute.MERCHANT_DISPUTE;
 
 @Component
 public class MerchantDisputeDao extends AbstractGenericDao {

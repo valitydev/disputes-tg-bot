@@ -3,7 +3,7 @@ package dev.vality.disputes.tg.bot.service;
 import dev.vality.damsel.domain.ProviderRef;
 import dev.vality.disputes.provider.*;
 import dev.vality.disputes.tg.bot.config.properties.AdminChatProperties;
-import dev.vality.disputes.tg.bot.core.domain.tables.pojos.ProviderChat;
+import dev.vality.disputes.tg.bot.domain.tables.pojos.ProviderChat;
 import dev.vality.disputes.tg.bot.dao.ProviderChatDao;
 import dev.vality.disputes.tg.bot.exception.DisputeCreationException;
 import dev.vality.disputes.tg.bot.exception.NotSupportedOperationException;

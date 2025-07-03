@@ -1,7 +1,7 @@
 package dev.vality.disputes.tg.bot.dao;
 
 import dev.vality.dao.impl.AbstractGenericDao;
-import dev.vality.disputes.tg.bot.core.domain.tables.pojos.ProviderDispute;
+import dev.vality.disputes.tg.bot.domain.tables.pojos.ProviderDispute;
 import dev.vality.mapper.RecordRowMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.RowMapper;
@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import static dev.vality.disputes.tg.bot.core.domain.tables.ProviderDispute.PROVIDER_DISPUTE;
+import static dev.vality.disputes.tg.bot.domain.tables.ProviderDispute.PROVIDER_DISPUTE;
 
 @Component
 public class ProviderDisputeDao extends AbstractGenericDao {

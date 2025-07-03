@@ -1,7 +1,7 @@
 package dev.vality.disputes.tg.bot.dao;
 
 import dev.vality.dao.impl.AbstractGenericDao;
-import dev.vality.disputes.tg.bot.core.domain.tables.pojos.MerchantParty;
+import dev.vality.disputes.tg.bot.domain.tables.pojos.MerchantParty;
 import dev.vality.mapper.RecordRowMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,7 +12,7 @@ import javax.sql.DataSource;
 import java.util.List;
 import java.util.Optional;
 
-import static dev.vality.disputes.tg.bot.core.domain.Tables.MERCHANT_PARTY;
+import static dev.vality.disputes.tg.bot.domain.Tables.MERCHANT_PARTY;
 
 @Slf4j
 @Component

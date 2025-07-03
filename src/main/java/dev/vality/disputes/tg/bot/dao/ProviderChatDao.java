@@ -1,7 +1,7 @@
 package dev.vality.disputes.tg.bot.dao;
 
 import dev.vality.dao.impl.AbstractGenericDao;
-import dev.vality.disputes.tg.bot.core.domain.tables.pojos.ProviderChat;
+import dev.vality.disputes.tg.bot.domain.tables.pojos.ProviderChat;
 import dev.vality.mapper.RecordRowMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.JdbcUpdateAffectedIncorrectNumberOfRowsException;
@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
 import javax.sql.DataSource;
 import java.util.Optional;
 
-import static dev.vality.disputes.tg.bot.core.domain.Tables.PROVIDER_CHAT;
+import static dev.vality.disputes.tg.bot.domain.Tables.PROVIDER_CHAT;
 
 @Slf4j
 @Component

@@ -1,6 +1,6 @@
 package dev.vality.disputes.tg.bot.util;
 
-import dev.vality.disputes.tg.bot.core.domain.tables.pojos.MerchantDispute;
+import dev.vality.disputes.tg.bot.domain.tables.pojos.MerchantDispute;
 import dev.vality.disputes.tg.bot.service.Polyglot;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
@@ -19,7 +19,7 @@ public class PolyglotUtil {
         return buildStatusMessage(dispute, statusMessage, messageType, replyLocale, polyglot);
     }
 
-    private static String formatStatusMessage(dev.vality.disputes.tg.bot.core.domain.enums.DisputeStatus status) {
+    private static String formatStatusMessage(dev.vality.disputes.tg.bot.domain.enums.DisputeStatus status) {
         return switch (status) {
             case pending -> String.format("%s ⏳", status.getLiteral());
             case approved -> String.format("%s ✅", status.getLiteral());

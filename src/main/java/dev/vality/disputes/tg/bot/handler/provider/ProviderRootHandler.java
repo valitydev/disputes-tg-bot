@@ -1,6 +1,6 @@
 package dev.vality.disputes.tg.bot.handler.provider;
 
-import dev.vality.disputes.tg.bot.core.domain.tables.pojos.ProviderChat;
+import dev.vality.disputes.tg.bot.domain.tables.pojos.ProviderChat;
 import dev.vality.disputes.tg.bot.dao.ProviderChatDao;
 import dev.vality.disputes.tg.bot.dto.ProviderMessageDto;
 import dev.vality.disputes.tg.bot.handler.TelegramEventHandler;

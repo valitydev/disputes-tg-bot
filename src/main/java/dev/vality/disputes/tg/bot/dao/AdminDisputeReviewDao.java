@@ -1,7 +1,7 @@
 package dev.vality.disputes.tg.bot.dao;
 
 import dev.vality.dao.impl.AbstractGenericDao;
-import dev.vality.disputes.tg.bot.core.domain.tables.pojos.AdminDisputeReview;
+import dev.vality.disputes.tg.bot.domain.tables.pojos.AdminDisputeReview;
 import dev.vality.mapper.RecordRowMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.RowMapper;
@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
 import javax.sql.DataSource;
 import java.util.Optional;
 
-import static dev.vality.disputes.tg.bot.core.domain.tables.AdminDisputeReview.ADMIN_DISPUTE_REVIEW;
+import static dev.vality.disputes.tg.bot.domain.tables.AdminDisputeReview.ADMIN_DISPUTE_REVIEW;
 
 @Component
 public class AdminDisputeReviewDao extends AbstractGenericDao {
