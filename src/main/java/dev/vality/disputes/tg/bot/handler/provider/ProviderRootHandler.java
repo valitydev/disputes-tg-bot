@@ -1,8 +1,9 @@
-package dev.vality.disputes.tg.bot.handler;
+package dev.vality.disputes.tg.bot.handler.provider;
 
 import dev.vality.disputes.tg.bot.core.domain.tables.pojos.ProviderChat;
 import dev.vality.disputes.tg.bot.dao.ProviderChatDao;
 import dev.vality.disputes.tg.bot.dto.ProviderMessageDto;
+import dev.vality.disputes.tg.bot.handler.TelegramEventHandler;
 import dev.vality.disputes.tg.bot.util.TelegramUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;

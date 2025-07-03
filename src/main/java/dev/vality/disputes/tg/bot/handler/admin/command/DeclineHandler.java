@@ -4,17 +4,18 @@ import dev.vality.disputes.admin.AdminManagementServiceSrv;
 import dev.vality.disputes.admin.CancelParams;
 import dev.vality.disputes.admin.CancelParamsRequest;
 import dev.vality.disputes.tg.bot.config.properties.AdminChatProperties;
+import dev.vality.disputes.tg.bot.dao.ProviderDisputeDao;
 import dev.vality.disputes.tg.bot.dto.DisputeInfoDto;
 import dev.vality.disputes.tg.bot.handler.admin.AdminMessageHandler;
+import dev.vality.disputes.tg.bot.service.TelegramApiService;
 import dev.vality.disputes.tg.bot.util.TelegramUtil;
 import dev.vality.disputes.tg.bot.util.TextParsingUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 import org.telegram.telegrambots.meta.api.objects.Update;
-import org.telegram.telegrambots.meta.generics.TelegramClient;
 
 import static dev.vality.disputes.tg.bot.util.TelegramUtil.extractText;
 
@@ -25,8 +26,8 @@ public class DeclineHandler implements AdminMessageHandler {
 
     private final AdminChatProperties adminChatProperties;
     private final AdminManagementServiceSrv.Iface adminManagementClient;
-    private final TelegramClient telegramClient;
-    private final ApplicationEventPublisher events;
+    private final TelegramApiService telegramApiService;
+    private final ProviderDisputeDao providerDisputeDao;
 
     @Override
     public boolean filter(Update update) {
@@ -45,6 +46,7 @@ public class DeclineHandler implements AdminMessageHandler {
 
     @Override
     @SneakyThrows
+    @Transactional
     public void handle(Update update) {
         log.info("[{}] Processing decline dispute request from {}",
                 update.getUpdateId(), TelegramUtil.extractUserInfo(update));
@@ -58,16 +60,15 @@ public class DeclineHandler implements AdminMessageHandler {
             CancelParamsRequest cancelParamsRequest = new CancelParamsRequest();
             cancelParamsRequest.setCancelParams(disputeInfos.stream().map(this::convertToCancelParams).toList());
             adminManagementClient.cancelPending(cancelParamsRequest);
-            disputeInfos.forEach(events::publishEvent);
+            disputeInfos.forEach(event -> {
+                        log.info("Updating provider dispute info: {}", event);
+                        providerDisputeDao.updateReason(event.getInvoiceId(), event.getPaymentId(),
+                                event.getResponseText());
+                        log.info("Successfully updated provider dispute info: {}", event);
+                    }
+            );
             log.info("[{}] Successfully processed decline disputes request", update.getUpdateId());
-
-            try {
-                var reaction = TelegramUtil.getSetMessageReaction(adminChatProperties.getId(),
-                        update.getMessage().getMessageId(), "👍");
-                telegramClient.execute(reaction);
-            } catch (Exception e) {
-                log.warn("[{}] Unable to set 'thumb up' reaction", update.getUpdateId(), e);
-            }
+            telegramApiService.setThumbUpReaction(adminChatProperties.getId(), update.getMessage().getMessageId());
         }
     }
 

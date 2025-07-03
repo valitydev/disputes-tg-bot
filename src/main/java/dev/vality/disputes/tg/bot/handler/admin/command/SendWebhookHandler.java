@@ -3,6 +3,7 @@ package dev.vality.disputes.tg.bot.handler.admin.command;
 import dev.vality.disputes.admin.AdminManagementServiceSrv;
 import dev.vality.disputes.admin.MerchantsNotificationParamsRequest;
 import dev.vality.disputes.tg.bot.handler.admin.AdminMessageHandler;
+import dev.vality.disputes.tg.bot.service.TelegramApiService;
 import dev.vality.disputes.tg.bot.util.TelegramUtil;
 import dev.vality.disputes.tg.bot.util.TextParsingUtil;
 import lombok.RequiredArgsConstructor;
@@ -10,7 +11,6 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.objects.Update;
-import org.telegram.telegrambots.meta.generics.TelegramClient;
 
 import static dev.vality.disputes.tg.bot.util.TelegramUtil.extractText;
 
@@ -23,7 +23,7 @@ public class SendWebhookHandler implements AdminMessageHandler {
     private static final String FULL_COMMAND = "/notify ";
 
     private final AdminManagementServiceSrv.Iface adminManagementClient;
-    private final TelegramClient telegramClient;
+    private final TelegramApiService telegramApiService;
 
     @Override
     public boolean filter(Update update) {
@@ -57,9 +57,7 @@ public class SendWebhookHandler implements AdminMessageHandler {
         adminManagementClient.sendMerchantsNotification(request);
         log.info("[{}] Send webhook command processed successfully from {}",
                 update.getUpdateId(), TelegramUtil.extractUserInfo(update));
-        var successReaction = TelegramUtil.getSetMessageReaction(update.getMessage().getChatId(),
-                update.getMessage().getMessageId(), "👍");
-        telegramClient.execute(successReaction);
+        telegramApiService.setThumbUpReaction(update.getMessage().getChatId(), update.getMessage().getMessageId());
     }
 
 }

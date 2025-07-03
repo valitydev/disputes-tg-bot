@@ -1,16 +1,17 @@
 package dev.vality.disputes.tg.bot.handler.admin.command;
 
 import dev.vality.disputes.tg.bot.config.properties.AdminChatProperties;
+import dev.vality.disputes.tg.bot.core.domain.tables.pojos.MerchantChat;
+import dev.vality.disputes.tg.bot.dao.MerchantChatDao;
 import dev.vality.disputes.tg.bot.dto.AddMerchantChatCommand;
-import dev.vality.disputes.tg.bot.event.NewMerchantChat;
 import dev.vality.disputes.tg.bot.handler.admin.AdminMessageHandler;
+import dev.vality.disputes.tg.bot.service.Polyglot;
 import dev.vality.disputes.tg.bot.service.TelegramApiService;
 import dev.vality.disputes.tg.bot.util.CommandValidationUtil;
 import dev.vality.disputes.tg.bot.util.TelegramUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
@@ -26,9 +27,10 @@ public class AddMerchantChatHandler implements AdminMessageHandler {
     private static final String LATIN_SINGLE_LETTER = "/am ";
     private static final String FULL_COMMAND = "/add_merch ";
 
-    private final ApplicationEventPublisher events;
+    private final MerchantChatDao merchantChatDao;
     private final AdminChatProperties adminChatProperties;
     private final TelegramApiService telegramApiService;
+    private final Polyglot polyglot;
 
     @Override
     public boolean filter(Update update) {
@@ -64,12 +66,19 @@ public class AddMerchantChatHandler implements AdminMessageHandler {
         var chatInfoOpt = telegramApiService.getChatInfo(addMerchantChatCommand.getChatId());
         if (chatInfoOpt.isEmpty()) {
             log.warn("Chat not found in Telegram: {}", addMerchantChatCommand.getChatId());
-            telegramApiService.sendReplyTo("error.chat.not-found", update);
+            String replyText = polyglot.getText("error.chat.not-found");
+            telegramApiService.sendReplyTo(replyText, update);
             return;
         }
         var chatInfo = chatInfoOpt.get();
-        log.info("[{}] Got chat form telegram: {}", update.getUpdateId(), chatInfo);
-        events.publishEvent(NewMerchantChat.builder().chatFullInfo(chatInfo).build());
+        log.info("[{}] Got chat from telegram: {}", update.getUpdateId(), chatInfo);
+
+        MerchantChat merchantChat = new MerchantChat();
+        merchantChat.setChatId(chatInfo.getId());
+        merchantChat.setTitle(chatInfo.getTitle());
+        long chatId = merchantChatDao.save(merchantChat);
+        log.info("Chat saved successfully with id: {}", chatId);
+
         telegramApiService.setThumbUpReaction(update.getMessage().getChatId(), update.getMessage().getMessageId());
     }
 
@@ -78,7 +87,8 @@ public class AddMerchantChatHandler implements AdminMessageHandler {
         String[] parts = messageText.split("\\s+", 3);
         if (parts.length < 2) {
             log.warn("Invalid command format: {}", messageText);
-            telegramApiService.sendReplyTo("error.input.invalid-add-merchant-chat-command", update);
+            String replyText = polyglot.getText("error.input.invalid-add-merchant-chat-command");
+            telegramApiService.sendReplyTo(replyText, update);
             return Optional.empty();
         }
         long chatId;
@@ -87,7 +97,8 @@ public class AddMerchantChatHandler implements AdminMessageHandler {
             chatId = CommandValidationUtil.extractLong(parts[1], "Chat ID");
         } catch (Exception e) {
             log.warn("Invalid chat ID: {}", parts[1], e);
-            telegramApiService.sendReplyTo("error.input.invalid-chat-id", update);
+            String replyText = polyglot.getText("error.input.invalid-chat-id");
+            telegramApiService.sendReplyTo(replyText, update);
             return Optional.empty();
         }
         return Optional.of(AddMerchantChatCommand.builder().chatId(chatId).build());

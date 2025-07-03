@@ -4,16 +4,14 @@ import dev.vality.disputes.tg.bot.config.properties.AdminChatProperties;
 import dev.vality.disputes.tg.bot.dao.MerchantChatDao;
 import dev.vality.disputes.tg.bot.exception.CommandValidationException;
 import dev.vality.disputes.tg.bot.handler.admin.AdminMessageHandler;
+import dev.vality.disputes.tg.bot.service.TelegramApiService;
 import dev.vality.disputes.tg.bot.util.CommandValidationUtil;
 import dev.vality.disputes.tg.bot.util.TelegramUtil;
 import lombok.RequiredArgsConstructor;
-import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
-import org.telegram.telegrambots.meta.api.methods.groupadministration.GetChat;
 import org.telegram.telegrambots.meta.api.objects.Update;
-import org.telegram.telegrambots.meta.generics.TelegramClient;
 
 import static dev.vality.disputes.tg.bot.util.TelegramUtil.extractText;
 
@@ -27,7 +25,7 @@ public class DisableMerchantChatHandler implements AdminMessageHandler {
 
     private final AdminChatProperties adminChatProperties;
     private final MerchantChatDao merchantChatDao;
-    private final TelegramClient telegramClient;
+    private final TelegramApiService telegramApiService;
 
     @Override
     public boolean filter(Update update) {
@@ -48,7 +46,6 @@ public class DisableMerchantChatHandler implements AdminMessageHandler {
     }
 
     @Override
-    @SneakyThrows
     @Transactional
     public void handle(Update update) {
         log.info("[{}] Processing disable merchant chat binding request from {}",
@@ -56,21 +53,19 @@ public class DisableMerchantChatHandler implements AdminMessageHandler {
         String messageText = extractText(update);
         log.info("[{}] Extracted text: {}", update.getUpdateId(), messageText);
         try {
+            //TODO: Unify command parsing, possible npe
             var chatId = getChatId(messageText);
-            var getChatRequest = new GetChat(chatId.toString());
-            var chatInfo = telegramClient.execute(getChatRequest);
+            var chatInfo = telegramApiService.getChatInfo(chatId);
             log.info("[{}] Got chat form telegram: {}", update.getUpdateId(), chatInfo);
-            merchantChatDao.disable(chatInfo.getId());
+            merchantChatDao.disable(chatInfo.get().getId());
             log.info("[{}] Chat disabled successfully", update.getUpdateId());
-            var successReaction = TelegramUtil.getSetMessageReaction(update.getMessage().getChatId(),
-                    update.getMessage().getMessageId(), "👍");
-            telegramClient.execute(successReaction);
+            telegramApiService.setThumbUpReaction(update.getMessage().getChatId(),  update.getMessage().getMessageId());
         } catch (CommandValidationException e) {
             log.warn("Unable to process user input", e);
             var response = TelegramUtil.buildPlainTextResponse(adminChatProperties.getId(), e.getMessage());
             response.setReplyToMessageId(update.getMessage().getMessageId());
             response.setMessageThreadId(update.getMessage().getMessageThreadId());
-            telegramClient.execute(response);
+            telegramApiService.sendReplyTo(e.getMessage(), update);
         }
     }
 

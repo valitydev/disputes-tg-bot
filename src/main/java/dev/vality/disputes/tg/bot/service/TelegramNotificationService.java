@@ -8,15 +8,10 @@ import dev.vality.disputes.tg.bot.util.TemplateUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage;
+import org.springframework.transaction.annotation.Transactional;
 import org.telegram.telegrambots.meta.api.objects.InputFile;
-import org.telegram.telegrambots.meta.api.objects.message.Message;
-import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
-import org.telegram.telegrambots.meta.generics.TelegramClient;
 
 import java.util.UUID;
-
-import static dev.vality.disputes.tg.bot.util.TelegramUtil.buildTextWithAttachmentResponse;
 
 @Slf4j
 @Service
@@ -24,22 +19,24 @@ import static dev.vality.disputes.tg.bot.util.TelegramUtil.buildTextWithAttachme
 public class TelegramNotificationService {
 
     private final Polyglot polyglot;
-    private final TelegramClient telegramClient;
+    private final TelegramApiService telegramApiService;
     private final ProviderDisputeDao providerDisputeDao;
 
+    @Transactional
     public void sendDisputeNotification(ProviderChat chat, DisputeParams disputeParams,
-                                        InputFile file, UUID disputeId) throws TelegramApiException {
+                                        InputFile file, UUID disputeId) {
         String text = prepareNotificationText(chat, disputeParams, disputeId);
-        var request = buildTextWithAttachmentResponse(chat.getSendToChatId(), text, file);
-        request.setMessageThreadId(chat.getSendToTopicId());
-        
         log.info("Sending dispute notification to provider");
-        Message message = telegramClient.execute(request);
+        var response = telegramApiService.sendMessageWithAttachment(text, chat.getSendToChatId(), file);
+        if (response.isEmpty()) {
+            log.warn("Unable to send dispute notification to provider");
+            return;
+        }
         try {
-            providerDisputeDao.updateTgMessageId(Long.valueOf(message.getMessageId()), disputeId);
+            providerDisputeDao.updateTgMessageId(Long.valueOf(response.get().getMessageId()), disputeId);
         } catch (Exception e) {
             log.error("Unable to update telegram messageId, source message will be deleted", e);
-            deleteMessage(request.getChatId(), message.getMessageId());
+            telegramApiService.deleteMessage(String.valueOf(response.get().getChatId()), response.get().getMessageId());
             throw e;
         }
     }
@@ -52,16 +49,6 @@ public class TelegramNotificationService {
                     disputeParams.getTransactionContext().getProviderTrxId(),
                     FormatUtil.formatPaymentId(disputeParams.getTransactionContext()),
                     disputeId.toString());
-        }
-    }
-
-    private void deleteMessage(String chatId, Integer messageId) {
-        try {
-            DeleteMessage deleteMessage = new DeleteMessage(chatId, messageId);
-            telegramClient.execute(deleteMessage);
-            log.info("Source message was deleted");
-        } catch (TelegramApiException e) {
-            log.error("Failed to delete message", e);
         }
     }
 } 

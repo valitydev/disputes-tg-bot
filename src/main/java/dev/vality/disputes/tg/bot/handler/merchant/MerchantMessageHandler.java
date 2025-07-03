@@ -1,4 +1,4 @@
-package dev.vality.disputes.tg.bot.handler;
+package dev.vality.disputes.tg.bot.handler.merchant;
 
 import dev.vality.disputes.tg.bot.dto.MerchantMessageDto;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;

@@ -2,16 +2,16 @@ package dev.vality.disputes.tg.bot.service;
 
 import dev.vality.damsel.domain.ProviderRef;
 import dev.vality.disputes.provider.*;
+import dev.vality.disputes.tg.bot.config.properties.AdminChatProperties;
 import dev.vality.disputes.tg.bot.core.domain.tables.pojos.ProviderChat;
 import dev.vality.disputes.tg.bot.dao.ProviderChatDao;
-import dev.vality.disputes.tg.bot.event.DisputeWithoutProviderChat;
 import dev.vality.disputes.tg.bot.exception.DisputeCreationException;
 import dev.vality.disputes.tg.bot.exception.NotSupportedOperationException;
+import dev.vality.disputes.tg.bot.service.external.DominantService;
 import dev.vality.disputes.tg.bot.service.external.HellgateService;
 import dev.vality.disputes.tg.bot.util.InvoiceUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,7 +30,10 @@ public class DisputesHandler implements ProviderDisputesServiceSrv.Iface {
     private final DisputeCreationService disputeCreationService;
     private final DisputeAttachmentService attachmentService;
     private final TelegramNotificationService notificationService;
-    private final ApplicationEventPublisher events;
+    private final DominantService dominantCacheService;
+    private final AdminChatProperties adminChatProperties;
+    private final Polyglot polyglot;
+    private final TelegramApiService telegramApiService;
 
     @Override
     @Transactional(propagation = Propagation.REQUIRED)
@@ -55,12 +58,15 @@ public class DisputesHandler implements ProviderDisputesServiceSrv.Iface {
         UUID disputeId = disputeCreationService.createProviderDispute(disputeParams);
         InputFile file = attachmentService.prepareDisputeAttachment(disputeId, disputeParams);
         log.info("Provider chat not found for dispute: {}", disputeId);
-        var event = DisputeWithoutProviderChat.builder()
-                .disputeParams(disputeParams)
-                .providerRef(providerRef)
-                .file(file)
-                .build();
-        events.publishEvent(event);
+        var provider = dominantCacheService.getProvider(providerRef);
+        var trxContext = disputeParams.getTransactionContext();
+        String text = polyglot.getText("dispute.provider.created-wo-chat",
+                providerRef.getId(), provider.getName(),
+                trxContext.getProviderTrxId(),
+                trxContext.getInvoiceId() + "." + trxContext.getPaymentId(),
+                disputeParams.getDisputeId().get());
+        telegramApiService.sendMessageWithAttachment(text, adminChatProperties.getId(),
+                adminChatProperties.getTopics().getUnknownProvider(), file);
         return createSuccessResult(disputeParams.getDisputeId().get());
     }
 

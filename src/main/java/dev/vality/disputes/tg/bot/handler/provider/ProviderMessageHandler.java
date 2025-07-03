@@ -1,4 +1,4 @@
-package dev.vality.disputes.tg.bot.handler;
+package dev.vality.disputes.tg.bot.handler.provider;
 
 import dev.vality.disputes.tg.bot.dto.ProviderMessageDto;
 

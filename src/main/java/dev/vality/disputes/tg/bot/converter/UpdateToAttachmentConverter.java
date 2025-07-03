@@ -2,21 +2,18 @@ package dev.vality.disputes.tg.bot.converter;
 
 import dev.vality.disputes.merchant.Attachment;
 import dev.vality.disputes.tg.bot.exception.UnexpectedException;
+import dev.vality.disputes.tg.bot.service.TelegramApiService;
 import dev.vality.disputes.tg.bot.util.TelegramUtil;
 import lombok.RequiredArgsConstructor;
-import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-import org.telegram.telegrambots.meta.api.methods.GetFile;
 import org.telegram.telegrambots.meta.api.objects.Document;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.Video;
 import org.telegram.telegrambots.meta.api.objects.photo.PhotoSize;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
-import org.telegram.telegrambots.meta.generics.TelegramClient;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -27,8 +24,9 @@ import java.util.Optional;
 public class UpdateToAttachmentConverter {
 
     private static final String DEFAULT_COMPRESSED_PHOTO_MIME_TYPE = "image/jpeg";
+    private final TelegramApiService telegramApiService;
 
-    public Attachment convert(Update update, TelegramClient telegramClient) throws TelegramApiException,
+    public Attachment convert(Update update) throws TelegramApiException,
             IOException {
         String fileId;
         String mimeType;
@@ -51,7 +49,7 @@ public class UpdateToAttachmentConverter {
         }
 
         Attachment attachment = new Attachment();
-        attachment.setData(getFileContent(fileId, telegramClient));
+        attachment.setData(telegramApiService.getFile(fileId));
         attachment.setMimeType(mimeType);
         return attachment;
     }
@@ -87,18 +85,6 @@ public class UpdateToAttachmentConverter {
             return Optional.of(message.getVideo());
         }
         return Optional.empty();
-    }
-
-    @SneakyThrows
-    private byte[] getFileContent(String fileId, TelegramClient telegramClient) {
-        var getFileRequest = GetFile.builder()
-                .fileId(fileId)
-                .build();
-        log.debug("Downloading file with fileId: {}", fileId);
-        org.telegram.telegrambots.meta.api.objects.File file = telegramClient.execute(getFileRequest);
-        String filePath = file.getFilePath();
-        java.io.File attachedFile = telegramClient.downloadFile(filePath);
-        return Files.readAllBytes(attachedFile.toPath());
     }
 
     private PhotoSize findBestQualityPhoto(List<PhotoSize> photoSizes) {

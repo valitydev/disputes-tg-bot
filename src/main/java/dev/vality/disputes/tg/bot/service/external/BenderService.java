@@ -17,8 +17,8 @@ public class BenderService {
 
     private final BenderSrv.Iface benderClient;
 
-    public String getInvoiceId(String partyId, String externalId) {
-        String benderPath = String.format(BENDER_PATH_FORMAT, partyId, externalId);
+    public String getInvoiceId(String partyId, String merchantPaymentId) {
+        String benderPath = String.format(BENDER_PATH_FORMAT, partyId, merchantPaymentId);
         log.debug("Getting invoice ID via Bender with path: {}", benderPath);
         return getInvoiceId(benderPath);
     }

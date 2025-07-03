@@ -75,7 +75,8 @@ public class BindMerchantPartyHandler implements AdminMessageHandler {
             telegramApiService.setThumbUpReaction(update.getMessage().getChatId(), update.getMessage().getMessageId());
         } catch (Exception e) {
             log.error("Failed to save merchant party binding", e);
-            telegramApiService.sendReplyTo(replyLocale, "error.processing.failed", update);
+            String replyText = polyglot.getText(replyLocale, "error.processing.failed");
+            telegramApiService.sendReplyTo(replyText, update);
         }
     }
 
@@ -84,7 +85,8 @@ public class BindMerchantPartyHandler implements AdminMessageHandler {
         String[] parts = messageText.split("\\s+", 3);
         if (parts.length < 3) {
             log.warn("Invalid command format: {}", messageText);
-            telegramApiService.sendReplyTo(replyLocale, "error.input.invalid-bind-chat-command", update);
+            String replyText = polyglot.getText(replyLocale, "error.input.invalid-bind-chat-command");
+            telegramApiService.sendReplyTo(replyText, update);
             return Optional.empty();
         }
         Long chatId;
@@ -92,18 +94,21 @@ public class BindMerchantPartyHandler implements AdminMessageHandler {
             chatId = CommandValidationUtil.extractLong(parts[1], "Chat ID");
         } catch (Exception e) {
             log.warn("Invalid chat ID: {}", parts[1], e);
-            telegramApiService.sendReplyTo(replyLocale, "error.input.invalid-chat-id", update);
+            String replyText = polyglot.getText(replyLocale, "error.input.invalid-chat-id");
+            telegramApiService.sendReplyTo(replyText, update);
             return Optional.empty();
         }
         if (telegramApiService.getChatInfo(chatId).isEmpty()) {
             log.warn("Chat not found in Telegram: {}", chatId);
-            telegramApiService.sendReplyTo(replyLocale, "error.chat.not-found", update);
+            String replyText = polyglot.getText(replyLocale, "error.chat.not-found");
+            telegramApiService.sendReplyTo(replyText, update);
             return Optional.empty();
         }
         var merchantChat = merchantChatDao.get(chatId);
         if (merchantChat.isEmpty()) {
             log.warn("Merchant chat not found for chat ID: {}", chatId);
-            telegramApiService.sendReplyTo(replyLocale, "error.chat.not-found", update);
+            String replyText = polyglot.getText(replyLocale, "error.chat.not-found");
+            telegramApiService.sendReplyTo(replyText, update);
             return Optional.empty();
         }
         String partyId = parts[2];

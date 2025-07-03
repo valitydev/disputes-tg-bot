@@ -4,8 +4,7 @@ import dev.vality.disputes.tg.bot.core.domain.enums.DisputeStatus;
 import dev.vality.disputes.tg.bot.core.domain.tables.pojos.MerchantDispute;
 import dev.vality.disputes.tg.bot.dao.MerchantChatDao;
 import dev.vality.disputes.tg.bot.dao.MerchantDisputeDao;
-import dev.vality.disputes.tg.bot.handler.command.StatusDisputeHandler;
-import dev.vality.disputes.tg.bot.util.TelegramUtil;
+import dev.vality.disputes.tg.bot.handler.merchant.command.StatusDisputeHandler;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -13,7 +12,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.telegram.telegrambots.meta.generics.TelegramClient;
 
 import java.util.List;
 
@@ -26,7 +24,7 @@ import static dev.vality.disputes.tg.bot.util.PolyglotUtil.prepareStatusMessage;
 public class ScheduledDisputesStatusCheckerService {
 
     private final Polyglot polyglot;
-    private final TelegramClient telegramClient;
+    private final TelegramApiService telegramApiService;
     private final MerchantDisputeDao merchantDisputeDao;
     private final MerchantChatDao merchantChatDao;
     private final StatusDisputeHandler statusDisputeHandler;
@@ -60,8 +58,7 @@ public class ScheduledDisputesStatusCheckerService {
         var locale = polyglot.getLocale(chat.getLocale());
         String reply = prepareStatusMessage(dispute, locale, polyglot);
         try {
-            telegramClient.execute(TelegramUtil.buildPlainTextResponse(chat.getChatId(),
-                    reply, Math.toIntExact(dispute.getTgMessageId())));
+            telegramApiService.sendReplyTo(reply, chat.getId(), Math.toIntExact(dispute.getTgMessageId()));
         } catch (Exception ex) {
             log.warn("Failed to send reply, dispute: {}", dispute, ex);
         }

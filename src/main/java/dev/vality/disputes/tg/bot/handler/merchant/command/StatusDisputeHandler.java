@@ -1,4 +1,4 @@
-package dev.vality.disputes.tg.bot.handler.command;
+package dev.vality.disputes.tg.bot.handler.merchant.command;
 
 import dev.vality.disputes.merchant.DisputeContext;
 import dev.vality.disputes.merchant.DisputeNotFound;
@@ -9,17 +9,16 @@ import dev.vality.disputes.tg.bot.dao.MerchantDisputeDao;
 import dev.vality.disputes.tg.bot.dto.DisputeInfoDto;
 import dev.vality.disputes.tg.bot.dto.MerchantMessageDto;
 import dev.vality.disputes.tg.bot.exception.UnexpectedException;
-import dev.vality.disputes.tg.bot.handler.MerchantMessageHandler;
+import dev.vality.disputes.tg.bot.handler.merchant.MerchantMessageHandler;
 import dev.vality.disputes.tg.bot.service.Polyglot;
+import dev.vality.disputes.tg.bot.service.TelegramApiService;
 import dev.vality.disputes.tg.bot.service.external.DisputesApiService;
-import dev.vality.disputes.tg.bot.util.TelegramUtil;
 import dev.vality.disputes.tg.bot.util.TextParsingUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
-import org.telegram.telegrambots.meta.generics.TelegramClient;
 
 import java.time.LocalDateTime;
 import java.util.Comparator;
@@ -43,7 +42,7 @@ public class StatusDisputeHandler implements MerchantMessageHandler {
     private final MerchantDisputeDao merchantDisputeDao;
     private final Polyglot polyglot;
     private final DisputesApiService disputesApiService;
-    private final TelegramClient telegramClient;
+    private final TelegramApiService telegramApiService;
 
     @Override
     public boolean filter(MerchantMessageDto message) {
@@ -66,7 +65,7 @@ public class StatusDisputeHandler implements MerchantMessageHandler {
         if (paymentInfoOptional.isEmpty()) {
             log.warn("Payment info not found, message text: {}", messageText);
             String reply = polyglot.getText(replyLocale, "error.input.dispute-or-invoice-missing");
-            telegramClient.execute(TelegramUtil.buildPlainTextResponse(update, reply));
+            telegramApiService.sendReplyTo(reply, update);
             return;
         }
 
@@ -74,12 +73,12 @@ public class StatusDisputeHandler implements MerchantMessageHandler {
         if (matchingDisputes.isEmpty()) {
             log.info("Dispute not found: {}", messageText);
             String reply = polyglot.getText(replyLocale, "error.input.dispute-not-found");
-            telegramClient.execute(TelegramUtil.buildPlainTextResponse(update, reply));
+            telegramApiService.sendReplyTo(reply, update);
             return;
         }
         updateDisputesStatuses(matchingDisputes);
         String response = buildPlainTextResponse(matchingDisputes, replyLocale);
-        telegramClient.execute(TelegramUtil.buildPlainTextResponse(update, response));
+        telegramApiService.sendReplyTo(response, update);
     }
 
     private List<MerchantDispute> findDisputes(DisputeInfoDto paymentInfo) {

@@ -24,14 +24,20 @@ public class TelegramUtil {
         return SendMessage.builder()
                 .chatId(Objects.requireNonNull(getChatId(update)))
                 .replyToMessageId(getMessageId(update))
+                .messageThreadId(getMessageThreadId(update))
                 .parseMode(htmlParseMode)
                 .text(text)
                 .build();
     }
 
     public static SendMessage buildPlainTextResponse(Long chatId, String text) {
+        return buildPlainTextResponse(chatId, null, text);
+    }
+
+    public static SendMessage buildPlainTextResponse(Long chatId, Integer threadId, String text) {
         return SendMessage.builder()
                 .chatId(chatId)
+                .messageThreadId(threadId)
                 .parseMode(htmlParseMode)
                 .text(text)
                 .build();
@@ -56,11 +62,32 @@ public class TelegramUtil {
         return null;
     }
 
-    public static SendDocument buildTextWithAttachmentResponse(Long chatId, String text, InputFile file) {
+    private static Integer getMessageThreadId(Update update) {
+        if (update.hasMessage()) {
+            return update.getMessage().getMessageThreadId();
+        }
+        if (update.hasChannelPost()) {
+            return update.getChannelPost().getMessageThreadId();
+        }
+        return null;
+    }
+
+    public static SendDocument buildTextWithAttachmentResponse(Long chatId, String text, InputFile attachment) {
         return SendDocument.builder()
                 .chatId(chatId)
                 .parseMode(htmlParseMode)
-                .document(file)
+                .document(attachment)
+                .caption(text)
+                .build();
+    }
+
+    public static SendDocument buildTextWithAttachmentResponse(Long chatId, Integer threadId, String text,
+                                                               InputFile attachment) {
+        return SendDocument.builder()
+                .chatId(chatId)
+                .messageThreadId(threadId)
+                .parseMode(htmlParseMode)
+                .document(attachment)
                 .caption(text)
                 .build();
     }

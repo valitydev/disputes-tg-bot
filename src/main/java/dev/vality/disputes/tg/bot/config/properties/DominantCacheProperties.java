@@ -13,7 +13,6 @@ import org.springframework.validation.annotation.Validated;
 @ConfigurationProperties(prefix = "service.dominant.cache")
 public class DominantCacheProperties {
 
-    private CacheConfig terminals;
     private CacheConfig providers;
 
     @Getter

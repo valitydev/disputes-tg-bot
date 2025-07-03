@@ -1,4 +1,4 @@
-package dev.vality.disputes.tg.bot.handler.command;
+package dev.vality.disputes.tg.bot.handler.merchant.command;
 
 import dev.vality.disputes.tg.bot.core.domain.tables.pojos.MerchantParty;
 import dev.vality.disputes.tg.bot.dao.MerchantChatDao;
@@ -6,8 +6,9 @@ import dev.vality.disputes.tg.bot.dao.MerchantPartyDao;
 import dev.vality.disputes.tg.bot.dto.DisputeInfoDto;
 import dev.vality.disputes.tg.bot.dto.MerchantMessageDto;
 import dev.vality.disputes.tg.bot.exception.BenderException;
-import dev.vality.disputes.tg.bot.handler.MerchantMessageHandler;
+import dev.vality.disputes.tg.bot.handler.merchant.MerchantMessageHandler;
 import dev.vality.disputes.tg.bot.service.Polyglot;
+import dev.vality.disputes.tg.bot.service.TelegramApiService;
 import dev.vality.disputes.tg.bot.service.external.BenderService;
 import dev.vality.disputes.tg.bot.util.TelegramUtil;
 import dev.vality.disputes.tg.bot.util.TextParsingUtil;
@@ -15,8 +16,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.objects.Update;
-import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
-import org.telegram.telegrambots.meta.generics.TelegramClient;
 
 import java.util.List;
 import java.util.Locale;
@@ -36,7 +35,7 @@ public class CreateDisputeByExternalIdHandler implements MerchantMessageHandler 
     private final CreateDisputeHandler createDisputeHandler;
     private final Polyglot polyglot;
     private final BenderService benderService;
-    private final TelegramClient telegramClient;
+    private final TelegramApiService telegramApiService;
     private final MerchantChatDao merchantChatDao;
     private final MerchantPartyDao merchantPartyDao;
 
@@ -53,7 +52,7 @@ public class CreateDisputeByExternalIdHandler implements MerchantMessageHandler 
     }
 
     @Override
-    public void handle(MerchantMessageDto message) throws TelegramApiException {
+    public void handle(MerchantMessageDto message) {
         log.info("Processing create dispute by externalId request");
         Update update = message.getUpdate();
         String messageText = extractText(update);
@@ -62,7 +61,7 @@ public class CreateDisputeByExternalIdHandler implements MerchantMessageHandler 
         if (externalId.isEmpty()) {
             log.warn("External id not found, message text: {}", messageText);
             String reply = polyglot.getText(polyglot.getLocale(), "error.input.external-missing");
-            telegramClient.execute(TelegramUtil.buildPlainTextResponse(update, reply));
+            telegramApiService.sendReplyTo(reply, update);
             return;
         }
 
@@ -74,11 +73,10 @@ public class CreateDisputeByExternalIdHandler implements MerchantMessageHandler 
         DisputeInfoDto disputeInfoDto = DisputeInfoDto.builder()
                 .externalId(externalId.get())
                 .invoiceId(invoiceId).build();
-        telegramClient.execute(createDisputeHandler.handle(message, telegramClient, disputeInfoDto, replyLocale));
+        createDisputeHandler.handle(message, disputeInfoDto, replyLocale);
     }
 
-    private String findInvoiceIdByPartyIds(Update update, String externalId, Locale replyLocale)
-            throws TelegramApiException {
+    private String findInvoiceIdByPartyIds(Update update, String externalId, Locale replyLocale) {
         // Получаем chat_id из сообщения
         Long chatId = TelegramUtil.getChatId(update);
         if (chatId == null) {
@@ -91,7 +89,7 @@ public class CreateDisputeByExternalIdHandler implements MerchantMessageHandler 
         if (merchantChat.isEmpty()) {
             log.warn("Merchant chat not found for chat ID: {}", chatId);
             String reply = polyglot.getText(replyLocale, "error.processing.invoice-not-found");
-            telegramClient.execute(TelegramUtil.buildPlainTextResponse(update, reply));
+            telegramApiService.sendReplyTo(reply, update);
             return null;
         }
 
@@ -100,9 +98,9 @@ public class CreateDisputeByExternalIdHandler implements MerchantMessageHandler 
                 merchantPartyDao.getAllByMerchantChatId(merchantChat.get().getId());
         
         if (merchantParties.isEmpty()) {
-            log.warn("No party IDs found for chat ID: {}", chatId);
+            log.info("No partyIds found for chat ID: {}", chatId);
             String reply = polyglot.getText(replyLocale, "error.processing.invoice-not-found");
-            telegramClient.execute(TelegramUtil.buildPlainTextResponse(update, reply));
+            telegramApiService.sendReplyTo(reply, update);
             return null;
         }
 
@@ -124,9 +122,9 @@ public class CreateDisputeByExternalIdHandler implements MerchantMessageHandler 
 
         // Если ни один party_id не дал результата
         log.warn("Unable to find invoice ID via Bender for any party ID. External ID: {}, Party IDs tried: {}", 
-                externalId, merchantParties.stream().map(p -> p.getPartyId()).toList());
+                externalId, merchantParties.stream().map(MerchantParty::getPartyId).toList());
         String reply = polyglot.getText(replyLocale, "error.processing.invoice-not-found");
-        telegramClient.execute(TelegramUtil.buildPlainTextResponse(update, reply));
+        telegramApiService.sendReplyTo(reply, update);
         return null;
     }
 }

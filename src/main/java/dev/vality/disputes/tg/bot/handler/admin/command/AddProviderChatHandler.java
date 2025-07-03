@@ -5,15 +5,14 @@ import dev.vality.disputes.tg.bot.core.domain.tables.pojos.ProviderChat;
 import dev.vality.disputes.tg.bot.dao.ProviderChatDao;
 import dev.vality.disputes.tg.bot.exception.CommandValidationException;
 import dev.vality.disputes.tg.bot.handler.admin.AdminMessageHandler;
+import dev.vality.disputes.tg.bot.service.TelegramApiService;
 import dev.vality.disputes.tg.bot.util.CommandValidationUtil;
 import dev.vality.disputes.tg.bot.util.TelegramUtil;
 import lombok.RequiredArgsConstructor;
-import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.telegram.telegrambots.meta.api.objects.Update;
-import org.telegram.telegrambots.meta.generics.TelegramClient;
 
 import static dev.vality.disputes.tg.bot.util.TelegramUtil.extractText;
 
@@ -27,7 +26,7 @@ public class AddProviderChatHandler implements AdminMessageHandler {
 
     private final AdminChatProperties adminChatProperties;
     private final ProviderChatDao providerChatDao;
-    private final TelegramClient telegramClient;
+    private final TelegramApiService telegramApiService;
 
     @Override
     public boolean filter(Update update) {
@@ -48,7 +47,6 @@ public class AddProviderChatHandler implements AdminMessageHandler {
     }
 
     @Override
-    @SneakyThrows
     @Transactional
     public void handle(Update update) {
         log.info("[{}] Processing add provider chat binding request from {}",
@@ -57,15 +55,11 @@ public class AddProviderChatHandler implements AdminMessageHandler {
         try {
             var providerChat = parse(messageText);
             providerChatDao.save(providerChat);
-            var successReaction = TelegramUtil.getSetMessageReaction(update.getMessage().getChatId(),
-                    update.getMessage().getMessageId(), "👍");
-            telegramClient.execute(successReaction);
+            telegramApiService.setThumbUpReaction(update.getMessage().getChatId(), update.getMessage().getMessageId());
         } catch (CommandValidationException e) {
+            // TODO: Unify all command parsing methods
             log.warn("Unable to process user input", e);
-            var response = TelegramUtil.buildPlainTextResponse(adminChatProperties.getId(), e.getMessage());
-            response.setReplyToMessageId(update.getMessage().getMessageId());
-            response.setMessageThreadId(update.getMessage().getMessageThreadId());
-            telegramClient.execute(response);
+            telegramApiService.sendReplyTo(e.getMessage(), update);
         }
     }
 

@@ -6,18 +6,17 @@ import dev.vality.disputes.admin.CancelParamsRequest;
 import dev.vality.disputes.tg.bot.dao.AdminDisputeReviewDao;
 import dev.vality.disputes.tg.bot.exception.ConfigurationException;
 import dev.vality.disputes.tg.bot.handler.admin.AdminMessageHandler;
+import dev.vality.disputes.tg.bot.service.TelegramApiService;
+import dev.vality.disputes.tg.bot.util.TelegramUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.telegram.telegrambots.meta.api.objects.Update;
-import org.telegram.telegrambots.meta.generics.TelegramClient;
 
 import java.time.LocalDateTime;
 import java.util.List;
-
-import static dev.vality.disputes.tg.bot.util.TelegramUtil.*;
 
 @Slf4j
 @Component
@@ -26,12 +25,12 @@ public class AdminRepliedToDisputeHandler implements AdminMessageHandler {
 
     private final AdminDisputeReviewDao adminDisputeReviewDao;
     private final AdminManagementServiceSrv.Iface adminManagementClient;
-    private final TelegramClient telegramClient;
+    private final TelegramApiService telegramApiService;
 
     @Override
     public boolean filter(Update update) {
         // Message contains text
-        String messageText = extractText(update);
+        String messageText = TelegramUtil.extractText(update);
         if (messageText == null) {
             return false;
         }
@@ -56,7 +55,7 @@ public class AdminRepliedToDisputeHandler implements AdminMessageHandler {
                 () -> new ConfigurationException("Unreachable point, check application configuration"));
 
         CancelParams cancelParams = new CancelParams();
-        String text = extractText(update);
+        String text = TelegramUtil.extractText(update);
         cancelParams.setInvoiceId(dispute.getInvoiceId());
         cancelParams.setPaymentId(dispute.getPaymentId());
         cancelParams.setCancelReason(text);
@@ -69,8 +68,6 @@ public class AdminRepliedToDisputeHandler implements AdminMessageHandler {
         dispute.setReplyText(text);
         adminDisputeReviewDao.update(dispute);
 
-        var messageReaction = getSetMessageReaction(getChatId(update),
-                update.getMessage().getMessageId(), "👍");
-        telegramClient.execute(messageReaction);
+        telegramApiService.setThumbUpReaction(TelegramUtil.getChatId(update), update.getMessage().getMessageId());
     }
 }
