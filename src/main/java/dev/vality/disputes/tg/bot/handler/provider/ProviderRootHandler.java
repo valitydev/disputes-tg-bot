@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
 import java.util.List;
@@ -35,6 +36,7 @@ public class ProviderRootHandler implements TelegramEventHandler {
 
     @Override
     @SneakyThrows
+    @Transactional
     public void handle(Update message) {
         Long chatId = TelegramUtil.getChatId(message);
         Optional<ProviderChat> chat = providerChatDao.get(chatId);
