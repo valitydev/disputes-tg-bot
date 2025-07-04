@@ -1,7 +1,7 @@
 package dev.vality.disputes.tg.bot.handler.merchant;
 
-import dev.vality.disputes.tg.bot.domain.tables.pojos.MerchantChat;
 import dev.vality.disputes.tg.bot.dao.MerchantChatDao;
+import dev.vality.disputes.tg.bot.domain.tables.pojos.MerchantChat;
 import dev.vality.disputes.tg.bot.dto.MerchantMessageDto;
 import dev.vality.disputes.tg.bot.handler.TelegramEventHandler;
 import dev.vality.disputes.tg.bot.util.TelegramUtil;

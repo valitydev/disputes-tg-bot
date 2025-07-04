@@ -1,9 +1,10 @@
 package dev.vality.disputes.tg.bot.handler.admin.command;
 
 import dev.vality.disputes.tg.bot.config.properties.AdminChatProperties;
-import dev.vality.disputes.tg.bot.domain.tables.pojos.MerchantChat;
 import dev.vality.disputes.tg.bot.dao.MerchantChatDao;
+import dev.vality.disputes.tg.bot.domain.tables.pojos.MerchantChat;
 import dev.vality.disputes.tg.bot.dto.AddMerchantChatCommand;
+import dev.vality.disputes.tg.bot.exception.CommandValidationException;
 import dev.vality.disputes.tg.bot.handler.admin.AdminMessageHandler;
 import dev.vality.disputes.tg.bot.service.Polyglot;
 import dev.vality.disputes.tg.bot.service.TelegramApiService;
@@ -91,17 +92,15 @@ public class AddMerchantChatHandler implements AdminMessageHandler {
             telegramApiService.sendReplyTo(replyText, update);
             return Optional.empty();
         }
-        long chatId;
-
         try {
-            chatId = CommandValidationUtil.extractLong(parts[1], "Chat ID");
-        } catch (Exception e) {
+            long chatId = CommandValidationUtil.extractLong(parts[1], "Chat ID");
+            return Optional.of(AddMerchantChatCommand.builder().chatId(chatId).build());
+        } catch (CommandValidationException e) {
             log.warn("Invalid chat ID: {}", parts[1], e);
             String replyText = polyglot.getText("error.input.invalid-chat-id");
             telegramApiService.sendReplyTo(replyText, update);
             return Optional.empty();
         }
-        return Optional.of(AddMerchantChatCommand.builder().chatId(chatId).build());
     }
 
 }

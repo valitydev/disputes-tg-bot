@@ -1,9 +1,9 @@
 package dev.vality.disputes.tg.bot.service;
 
-import dev.vality.disputes.tg.bot.domain.enums.DisputeStatus;
-import dev.vality.disputes.tg.bot.domain.tables.pojos.MerchantDispute;
 import dev.vality.disputes.tg.bot.dao.MerchantChatDao;
 import dev.vality.disputes.tg.bot.dao.MerchantDisputeDao;
+import dev.vality.disputes.tg.bot.domain.enums.DisputeStatus;
+import dev.vality.disputes.tg.bot.domain.tables.pojos.MerchantDispute;
 import dev.vality.disputes.tg.bot.handler.merchant.command.StatusDisputeHandler;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -58,7 +58,7 @@ public class ScheduledDisputesStatusCheckerService {
         var locale = polyglot.getLocale(chat.getLocale());
         String reply = prepareStatusMessage(dispute, locale, polyglot);
         try {
-            telegramApiService.sendReplyTo(reply, chat.getId(), Math.toIntExact(dispute.getTgMessageId()));
+            telegramApiService.sendReplyTo(reply, chat.getChatId(), Math.toIntExact(dispute.getTgMessageId()));
         } catch (Exception ex) {
             log.warn("Failed to send reply, dispute: {}", dispute, ex);
         }

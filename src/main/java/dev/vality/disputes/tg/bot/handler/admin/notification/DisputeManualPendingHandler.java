@@ -2,8 +2,8 @@ package dev.vality.disputes.tg.bot.handler.admin.notification;
 
 import dev.vality.disputes.admin.DisputeManualPending;
 import dev.vality.disputes.tg.bot.config.properties.AdminChatProperties;
-import dev.vality.disputes.tg.bot.domain.tables.pojos.AdminDisputeReview;
 import dev.vality.disputes.tg.bot.dao.AdminDisputeReviewDao;
+import dev.vality.disputes.tg.bot.domain.tables.pojos.AdminDisputeReview;
 import dev.vality.disputes.tg.bot.service.Polyglot;
 import dev.vality.disputes.tg.bot.service.TelegramApiService;
 import dev.vality.disputes.tg.bot.service.external.DominantService;

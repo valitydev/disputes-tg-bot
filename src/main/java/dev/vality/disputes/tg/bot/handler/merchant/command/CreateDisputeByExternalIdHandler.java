@@ -1,8 +1,8 @@
 package dev.vality.disputes.tg.bot.handler.merchant.command;
 
-import dev.vality.disputes.tg.bot.domain.tables.pojos.MerchantParty;
 import dev.vality.disputes.tg.bot.dao.MerchantChatDao;
 import dev.vality.disputes.tg.bot.dao.MerchantPartyDao;
+import dev.vality.disputes.tg.bot.domain.tables.pojos.MerchantParty;
 import dev.vality.disputes.tg.bot.dto.DisputeInfoDto;
 import dev.vality.disputes.tg.bot.dto.MerchantMessageDto;
 import dev.vality.disputes.tg.bot.exception.BenderException;

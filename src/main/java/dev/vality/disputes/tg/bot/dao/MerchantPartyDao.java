@@ -4,7 +4,6 @@ import dev.vality.dao.impl.AbstractGenericDao;
 import dev.vality.disputes.tg.bot.domain.tables.pojos.MerchantParty;
 import dev.vality.mapper.RecordRowMapper;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Component;
 
@@ -20,7 +19,6 @@ public class MerchantPartyDao extends AbstractGenericDao {
 
     private final RowMapper<MerchantParty> merchantPartyRowMapper;
 
-    @Autowired
     public MerchantPartyDao(DataSource dataSource) {
         super(dataSource);
         merchantPartyRowMapper = new RecordRowMapper<>(MERCHANT_PARTY, MerchantParty.class);

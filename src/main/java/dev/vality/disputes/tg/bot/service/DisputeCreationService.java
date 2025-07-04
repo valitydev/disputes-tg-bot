@@ -1,9 +1,9 @@
 package dev.vality.disputes.tg.bot.service;
 
 import dev.vality.disputes.provider.DisputeParams;
+import dev.vality.disputes.tg.bot.dao.ProviderDisputeDao;
 import dev.vality.disputes.tg.bot.domain.tables.pojos.ProviderChat;
 import dev.vality.disputes.tg.bot.domain.tables.pojos.ProviderDispute;
-import dev.vality.disputes.tg.bot.dao.ProviderDisputeDao;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

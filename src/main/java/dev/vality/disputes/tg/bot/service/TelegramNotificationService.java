@@ -1,8 +1,8 @@
 package dev.vality.disputes.tg.bot.service;
 
 import dev.vality.disputes.provider.DisputeParams;
-import dev.vality.disputes.tg.bot.domain.tables.pojos.ProviderChat;
 import dev.vality.disputes.tg.bot.dao.ProviderDisputeDao;
+import dev.vality.disputes.tg.bot.domain.tables.pojos.ProviderChat;
 import dev.vality.disputes.tg.bot.util.FormatUtil;
 import dev.vality.disputes.tg.bot.util.TemplateUtil;
 import lombok.RequiredArgsConstructor;
