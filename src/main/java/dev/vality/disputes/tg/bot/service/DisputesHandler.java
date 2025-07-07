@@ -16,7 +16,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.telegram.telegrambots.meta.api.objects.InputFile;
-import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.util.UUID;
 
@@ -65,13 +64,12 @@ public class DisputesHandler implements ProviderDisputesServiceSrv.Iface {
                 trxContext.getProviderTrxId(),
                 trxContext.getInvoiceId() + "." + trxContext.getPaymentId(),
                 disputeParams.getDisputeId().get());
-        telegramApiService.sendMessageWithAttachment(text, adminChatProperties.getId(),
+        telegramApiService.sendMessageWithDocument(text, adminChatProperties.getId(),
                 adminChatProperties.getTopics().getUnknownProvider(), file);
         return createSuccessResult(disputeParams.getDisputeId().get());
     }
 
-    private DisputeCreatedResult createDisputeWithProviderChat(DisputeParams disputeParams, ProviderChat chat) 
-            throws TelegramApiException {
+    private DisputeCreatedResult createDisputeWithProviderChat(DisputeParams disputeParams, ProviderChat chat) {
         UUID disputeId = disputeCreationService.createProviderDispute(disputeParams, chat);
         InputFile file = attachmentService.prepareDisputeAttachment(disputeId, disputeParams);
         notificationService.sendDisputeNotification(chat, disputeParams, file, disputeId);

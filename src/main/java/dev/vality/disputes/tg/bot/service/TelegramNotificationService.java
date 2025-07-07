@@ -27,7 +27,7 @@ public class TelegramNotificationService {
                                         InputFile file, UUID disputeId) {
         String text = prepareNotificationText(chat, disputeParams, disputeId);
         log.info("Sending dispute notification to provider");
-        var response = telegramApiService.sendMessageWithAttachment(text, chat.getSendToChatId(), file);
+        var response = telegramApiService.sendMessageWithDocument(text, chat.getSendToChatId(), file);
         if (response.isEmpty()) {
             log.warn("Unable to send dispute notification to provider");
             return;

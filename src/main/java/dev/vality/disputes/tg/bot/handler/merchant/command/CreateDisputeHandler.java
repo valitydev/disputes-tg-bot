@@ -9,10 +9,7 @@ import dev.vality.disputes.tg.bot.domain.enums.DisputeStatus;
 import dev.vality.disputes.tg.bot.domain.tables.pojos.MerchantDispute;
 import dev.vality.disputes.tg.bot.dto.DisputeInfoDto;
 import dev.vality.disputes.tg.bot.dto.MerchantMessageDto;
-import dev.vality.disputes.tg.bot.exception.AttachmentTypeNotSupportedException;
-import dev.vality.disputes.tg.bot.exception.PaymentCapturedException;
-import dev.vality.disputes.tg.bot.exception.PaymentNotStartedException;
-import dev.vality.disputes.tg.bot.exception.PaymentStatusRestrictionException;
+import dev.vality.disputes.tg.bot.exception.*;
 import dev.vality.disputes.tg.bot.handler.merchant.MerchantMessageHandler;
 import dev.vality.disputes.tg.bot.service.Polyglot;
 import dev.vality.disputes.tg.bot.service.TelegramApiService;
@@ -165,6 +162,11 @@ public class CreateDisputeHandler implements MerchantMessageHandler {
         } catch (AttachmentTypeNotSupportedException e3) {
             log.error("[{}] AttachmentTypeNotSupportedException occurred", update.getUpdateId());
             String reply = polyglot.getText(replyLocale, "error.input.attachment-type-not-supported");
+            telegramApiService.sendReplyTo(reply, update);
+            return;
+        } catch (PaymentExpiredException e4) {
+            log.error("[{}] PaymentExpiredException occurred", update.getUpdateId());
+            String reply = polyglot.getText(replyLocale, "error.input.payment-expired");
             telegramApiService.sendReplyTo(reply, update);
             return;
         } catch (Exception unknownException) {

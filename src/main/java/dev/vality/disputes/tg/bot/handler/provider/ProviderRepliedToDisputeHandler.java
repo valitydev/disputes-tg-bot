@@ -22,6 +22,7 @@ import dev.vality.disputes.tg.bot.service.external.DominantService;
 import dev.vality.disputes.tg.bot.util.FormatUtil;
 import dev.vality.disputes.tg.bot.util.TelegramUtil;
 import dev.vality.disputes.tg.bot.util.TextParsingUtil;
+import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -36,6 +37,7 @@ import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
 
+import static dev.vality.disputes.tg.bot.config.model.ResponsePattern.ResponseType.APPROVED;
 import static dev.vality.disputes.tg.bot.util.TelegramUtil.extractText;
 
 @Slf4j
@@ -112,7 +114,7 @@ public class ProviderRepliedToDisputeHandler implements ProviderMessageHandler {
             case null -> handleUnknownResponse(message, providerDispute);
         }
 
-        if (pattern.getResponseType() != null) {
+        if (pattern.getResponseType() != null && !APPROVED.equals(pattern.getResponseType())) {
             var supportMessage = getReviewPatternSupportMessage(message, providerDispute, pattern);
             telegramApiService.sendMessage(supportMessage, adminChatProperties.getId(),
                     adminChatProperties.getTopics().getReviewDisputesPatterns());
@@ -154,17 +156,7 @@ public class ProviderRepliedToDisputeHandler implements ProviderMessageHandler {
 
         // Проверяем наличие вложения в сообщении
         var telegramMessage = TelegramUtil.getMessage(message.getUpdate());
-        if (TelegramUtil.hasAttachment(telegramMessage)) {
-            // Если есть вложение, создаем SendDocument
-            InputFile attachment = extractAttachment(telegramMessage);
-            if (attachment != null) {
-                return telegramApiService.sendMessageWithAttachment(reply, adminChatProperties.getId(), adminTopicId,
-                        attachment);
-            }
-        }
-
-        // Если нет вложения, возвращаем обычное текстовое сообщение
-        return telegramApiService.sendMessage(reply, adminChatProperties.getId(), adminTopicId);
+        return sendMessageWithAttachmentFromInitial(telegramMessage, reply, adminChatProperties.getId(), adminTopicId);
     }
 
     private void handleDeclinedDispute(ProviderDispute providerDispute, ResponsePattern pattern,
@@ -209,25 +201,22 @@ public class ProviderRepliedToDisputeHandler implements ProviderMessageHandler {
                 extractText(message.getUpdate()));
     }
 
-    private InputFile extractAttachment(org.telegram.telegrambots.meta.api.objects.message.Message message) {
+    private Optional<Message> sendMessageWithAttachmentFromInitial(Message message, String reply, @NotNull Long chatId,
+                                                                   Integer adminTopicId) {
         if (message.hasPhoto() && message.getPhoto() != null && !message.getPhoto().isEmpty()) {
             // Для фото берем последнее (самое большое) фото
             var photo = message.getPhoto().getLast();
-            InputFile inputFile = new InputFile();
-            inputFile.setMedia(photo.getFileId());
-            return inputFile;
+            InputFile inputFile = new InputFile(photo.getFileId());
+            return telegramApiService.sendMessageWithPhoto(reply, chatId, adminTopicId, inputFile);
+        } else if (message.hasDocument() && message.getDocument() != null) {
+            InputFile inputFile = new InputFile(message.getDocument().getFileId());
+            return telegramApiService.sendMessageWithDocument(reply, chatId, adminTopicId, inputFile);
+        } else if (message.hasVideo() && message.getVideo() != null) {
+            InputFile inputFile = new InputFile(message.getVideo().getFileId());
+            return telegramApiService.sendMessageWithVideo(reply, chatId, adminTopicId, inputFile);
+        } else {
+            return telegramApiService.sendMessage(reply, adminChatProperties.getId(), adminTopicId);
         }
-        if (message.hasDocument() && message.getDocument() != null) {
-            InputFile inputFile = new InputFile();
-            inputFile.setMedia(message.getDocument().getFileId());
-            return inputFile;
-        }
-        if (message.hasVideo() && message.getVideo() != null) {
-            InputFile inputFile = new InputFile();
-            inputFile.setMedia(message.getVideo().getFileId());
-            return inputFile;
-        }
-        return null;
     }
 
     private AdminDisputeReview buildSupportDispute(Message deliveredMessage,

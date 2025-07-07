@@ -78,7 +78,7 @@ public class PolyglotUtil {
         try {
             return polyglot.getText(errorCode);
         } catch (Exception e) {
-            log.warn("Unable to find error description with code '{}'", errorCode);
+            log.info("Unable to find error description with code '{}'", errorCode);
             return errorCode;
         }
     }

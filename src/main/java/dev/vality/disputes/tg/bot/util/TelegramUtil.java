@@ -5,6 +5,8 @@ import lombok.experimental.UtilityClass;
 import org.telegram.telegrambots.meta.api.methods.reactions.SetMessageReaction;
 import org.telegram.telegrambots.meta.api.methods.send.SendDocument;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
+import org.telegram.telegrambots.meta.api.methods.send.SendVideo;
 import org.telegram.telegrambots.meta.api.objects.InputFile;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.User;
@@ -19,6 +21,47 @@ import java.util.Objects;
 public class TelegramUtil {
 
     private static final String htmlParseMode = "HTML";
+
+    public static Long getChatId(Update update) {
+        if (update.hasMessage() && update.getMessage().getChatId() != null) {
+            return update.getMessage().getChatId();
+        }
+
+        if (update.hasChannelPost() && update.getChannelPost().getChatId() != null) {
+            return update.getChannelPost().getChatId();
+        }
+
+        if (update.hasMyChatMember() && update.getMyChatMember().getChat() != null) {
+            return update.getMyChatMember().getChat().getId();
+        }
+
+        if (update.hasCallbackQuery()
+                && update.getCallbackQuery().getMessage() != null
+                && update.getCallbackQuery().getMessage().getChatId() != null) {
+            return update.getCallbackQuery().getMessage().getChatId();
+        }
+        return null;
+    }
+
+    private static Integer getMessageId(Update update) {
+        if (update.hasMessage()) {
+            return update.getMessage().getMessageId();
+        }
+        if (update.hasChannelPost()) {
+            return update.getChannelPost().getMessageId();
+        }
+        return null;
+    }
+
+    private static Integer getMessageThreadId(Update update) {
+        if (update.hasMessage()) {
+            return update.getMessage().getMessageThreadId();
+        }
+        if (update.hasChannelPost()) {
+            return update.getChannelPost().getMessageThreadId();
+        }
+        return null;
+    }
 
     public static SendMessage buildPlainTextResponse(Update update, String text) {
         return SendMessage.builder()
@@ -52,42 +95,47 @@ public class TelegramUtil {
                 .build();
     }
 
-    private static Integer getMessageId(Update update) {
-        if (update.hasMessage()) {
-            return update.getMessage().getMessageId();
-        }
-        if (update.hasChannelPost()) {
-            return update.getChannelPost().getMessageId();
-        }
-        return null;
+    public static SendDocument buildTextWithDocumentResponse(Long chatId, String text, InputFile attachment) {
+        return buildTextWithDocumentResponse(chatId, null, text, attachment);
     }
 
-    private static Integer getMessageThreadId(Update update) {
-        if (update.hasMessage()) {
-            return update.getMessage().getMessageThreadId();
-        }
-        if (update.hasChannelPost()) {
-            return update.getChannelPost().getMessageThreadId();
-        }
-        return null;
-    }
-
-    public static SendDocument buildTextWithAttachmentResponse(Long chatId, String text, InputFile attachment) {
+    public static SendDocument buildTextWithDocumentResponse(Long chatId, Integer threadId, String text,
+                                                             InputFile attachment) {
         return SendDocument.builder()
                 .chatId(chatId)
+                .messageThreadId(threadId)
                 .parseMode(htmlParseMode)
                 .document(attachment)
                 .caption(text)
                 .build();
     }
 
-    public static SendDocument buildTextWithAttachmentResponse(Long chatId, Integer threadId, String text,
-                                                               InputFile attachment) {
-        return SendDocument.builder()
+    public static SendPhoto buildTextWithPhotoResponse(Long chatId, String text, InputFile attachment) {
+        return buildTextWithPhotoResponse(chatId, null, text, attachment);
+    }
+
+    public static SendPhoto buildTextWithPhotoResponse(Long chatId, Integer threadId, String text,
+                                                       InputFile attachment) {
+        return SendPhoto.builder()
                 .chatId(chatId)
                 .messageThreadId(threadId)
                 .parseMode(htmlParseMode)
-                .document(attachment)
+                .photo(attachment)
+                .caption(text)
+                .build();
+    }
+
+    public static SendVideo buildTextWithVideoResponse(Long chatId, String text, InputFile attachment) {
+        return buildTextWithVideoResponse(chatId, null, text, attachment);
+    }
+
+    public static SendVideo buildTextWithVideoResponse(Long chatId, Integer threadId, String text,
+                                                       InputFile attachment) {
+        return SendVideo.builder()
+                .chatId(chatId)
+                .messageThreadId(threadId)
+                .parseMode(htmlParseMode)
+                .video(attachment)
                 .caption(text)
                 .build();
     }
@@ -110,27 +158,6 @@ public class TelegramUtil {
         return null;
     }
 
-    public static Long getChatId(Update update) {
-        if (update.hasMessage() && update.getMessage().getChatId() != null) {
-            return update.getMessage().getChatId();
-        }
-
-        if (update.hasChannelPost() && update.getChannelPost().getChatId() != null) {
-            return update.getChannelPost().getChatId();
-        }
-
-        if (update.hasMyChatMember() && update.getMyChatMember().getChat() != null) {
-            return update.getMyChatMember().getChat().getId();
-        }
-
-        if (update.hasCallbackQuery()
-                && update.getCallbackQuery().getMessage() != null
-                && update.getCallbackQuery().getMessage().getChatId() != null) {
-            return update.getCallbackQuery().getMessage().getChatId();
-        }
-        return null;
-    }
-
     public static String extractText(Update update) {
         var message = getMessage(update);
         if (message.hasText()) {
@@ -140,6 +167,16 @@ public class TelegramUtil {
             return message.getCaption();
         }
         return null;
+    }
+
+    public static Message getMessage(Update update) {
+        if (update.hasMessage()) {
+            return update.getMessage();
+        } else if (update.hasChannelPost()) {
+            return update.getChannelPost();
+        } else {
+            return null;
+        }
     }
 
     public static String extractUserInfo(Update update) {
@@ -174,16 +211,6 @@ public class TelegramUtil {
             return false;
         }
         return message.hasPhoto() || message.hasDocument() || message.hasVideo();
-    }
-
-    public static Message getMessage(Update update) {
-        if (update.hasMessage()) {
-            return update.getMessage();
-        } else if (update.hasChannelPost()) {
-            return update.getChannelPost();
-        } else {
-            return null;
-        }
     }
 
     public static SetMessageReaction getSetMessageReaction(Long chatId, Integer messageId, String emoji) {

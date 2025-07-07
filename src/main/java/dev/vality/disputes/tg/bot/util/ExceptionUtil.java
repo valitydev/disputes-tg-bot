@@ -24,6 +24,10 @@ public class ExceptionUtil {
         return isSpecificException(exception, "UnexpectedMimeTypeException");
     }
 
+    public static boolean isPaymentExpiredException(WRuntimeException exception) {
+        return isSpecificException(exception, "PaymentExpiredException");
+    }
+
     private static boolean isSpecificException(WRuntimeException exception, String exceptionName) {
         return hasValidErrorDefinition(exception) 
                 && exception.getErrorDefinition().getErrorReason().contains(exceptionName);

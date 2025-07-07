@@ -74,10 +74,10 @@ public class TelegramApiService {
         }
     }
 
-    public Optional<Message> sendMessageWithAttachment(String messageText, Long chatId, Integer threadId,
-                                                       InputFile attachment) {
+    public Optional<Message> sendMessageWithDocument(String messageText, Long chatId, Integer threadId,
+                                                     InputFile attachment) {
         try {
-            var sendDocument = TelegramUtil.buildTextWithAttachmentResponse(chatId, threadId, messageText, attachment);
+            var sendDocument = TelegramUtil.buildTextWithDocumentResponse(chatId, threadId, messageText, attachment);
             return Optional.of(telegramClient.execute(sendDocument));
         } catch (TelegramApiException e) {
             log.error("Failed to send message", e);
@@ -85,10 +85,32 @@ public class TelegramApiService {
         }
     }
 
-    public Optional<Message> sendMessageWithAttachment(String messageText, Long chatId, InputFile attachment) {
+    public Optional<Message> sendMessageWithDocument(String messageText, Long chatId, InputFile attachment) {
         try {
-            var sendDocument = TelegramUtil.buildTextWithAttachmentResponse(chatId, messageText, attachment);
+            var sendDocument = TelegramUtil.buildTextWithDocumentResponse(chatId, messageText, attachment);
             return Optional.of(telegramClient.execute(sendDocument));
+        } catch (TelegramApiException e) {
+            log.error("Failed to send message", e);
+            return Optional.empty();
+        }
+    }
+
+    public Optional<Message> sendMessageWithPhoto(String messageText, Long chatId, Integer threadId,
+                                                  InputFile attachment) {
+        try {
+            var sendPhoto = TelegramUtil.buildTextWithPhotoResponse(chatId, threadId, messageText, attachment);
+            return Optional.of(telegramClient.execute(sendPhoto));
+        } catch (TelegramApiException e) {
+            log.error("Failed to send message", e);
+            return Optional.empty();
+        }
+    }
+
+    public Optional<Message> sendMessageWithVideo(String messageText, Long chatId, Integer threadId,
+                                                  InputFile attachment) {
+        try {
+            var sendVideo = TelegramUtil.buildTextWithVideoResponse(chatId, threadId, messageText, attachment);
+            return Optional.of(telegramClient.execute(sendVideo));
         } catch (TelegramApiException e) {
             log.error("Failed to send message", e);
             return Optional.empty();
