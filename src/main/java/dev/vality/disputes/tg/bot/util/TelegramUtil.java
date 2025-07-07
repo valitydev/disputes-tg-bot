@@ -160,6 +160,9 @@ public class TelegramUtil {
 
     public static String extractText(Update update) {
         var message = getMessage(update);
+        if (message == null) {
+            return null;
+        }
         if (message.hasText()) {
             return message.getText();
         }
