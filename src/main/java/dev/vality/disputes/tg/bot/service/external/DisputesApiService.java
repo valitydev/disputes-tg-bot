@@ -38,7 +38,7 @@ public class DisputesApiService {
                 throw new AttachmentTypeNotSupportedException();
             }
             if (ExceptionUtil.isPaymentExpiredException(we)) {
-                throw new AttachmentTypeNotSupportedException();
+                throw new PaymentExpiredException();
             }
             throw new DisputesApiException("Failed to create dispute", we);
         } catch (Exception e) {
