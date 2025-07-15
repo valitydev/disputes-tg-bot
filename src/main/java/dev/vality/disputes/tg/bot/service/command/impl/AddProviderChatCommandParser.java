@@ -59,7 +59,12 @@ public class AddProviderChatCommandParser implements CommandParser<AddProviderCh
                     .build();
         }
 
-        var template = CommandValidationUtil.extractNullableString(args[4]);
+        // Extract the remaining string as template (4th argument) from original messageText
+        String template = null;
+        String[] parts = messageText.split("\\s+", 5);
+        if (parts.length > 4) {
+            template = CommandValidationUtil.extractNullableString(parts[4]);
+        }
 
         return AddProviderChatCommand.builder()
                 .providerId(providerId.get())
