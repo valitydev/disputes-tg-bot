@@ -9,6 +9,7 @@ import dev.vality.disputes.tg.bot.domain.enums.DisputeStatus;
 import dev.vality.disputes.tg.bot.domain.tables.pojos.MerchantDispute;
 import dev.vality.disputes.tg.bot.dto.DisputeInfoDto;
 import dev.vality.disputes.tg.bot.dto.MerchantMessageDto;
+import dev.vality.disputes.tg.bot.dto.command.CreateDisputeCommand;
 import dev.vality.disputes.tg.bot.exception.*;
 import dev.vality.disputes.tg.bot.handler.merchant.MerchantMessageHandler;
 import dev.vality.disputes.tg.bot.service.Polyglot;
@@ -38,8 +39,6 @@ import static dev.vality.disputes.tg.bot.util.TelegramUtil.hasAttachment;
 @Component
 @RequiredArgsConstructor
 public class CreateDisputeHandler implements MerchantMessageHandler {
-
-
 
     private final MerchantDisputeDao merchantDisputeDao;
     private final Polyglot polyglot;
@@ -72,11 +71,7 @@ public class CreateDisputeHandler implements MerchantMessageHandler {
         Locale replyLocale = polyglot.getLocale(message.getMerchantChat().getLocale());
         
         if (createDisputeCommand.hasValidationError()) {
-            var error = createDisputeCommand.getValidationError();
-            log.warn("Command validation error: {} for command: {}", error,
-                    createDisputeCommand.getClass().getSimpleName());
-            String replyText = polyglot.getText(replyLocale, error.getMessageKey());
-            telegramApiService.sendReplyTo(replyText, update);
+            sendErrorMessageToUser(createDisputeCommand, replyLocale, update);
             return;
         }
         
@@ -142,7 +137,6 @@ public class CreateDisputeHandler implements MerchantMessageHandler {
                 merchantDisputeDao.save(dispute);
                 String reply = buildDisputeCreatedReply(dispute, replyLocale);
                 telegramApiService.sendReplyTo(reply, update);
-                return;
             } else {
                 log.warn("[{}] This point should not be reached, check previous logs", update.getUpdateId());
             }
@@ -150,36 +144,36 @@ public class CreateDisputeHandler implements MerchantMessageHandler {
             log.error("[{}] PaymentNotStartedException occurred", update.getUpdateId());
             String reply = polyglot.getText(replyLocale, "error.input.payment-not-started");
             telegramApiService.sendReplyTo(reply, update);
-            return;
         } catch (PaymentCapturedException e1) {
             log.error("[{}] PaymentCapturedException occurred", update.getUpdateId());
             String reply = polyglot.getText(replyLocale, "error.input.payment-captured");
             telegramApiService.sendReplyTo(reply, update);
-            return;
         } catch (PaymentStatusRestrictionException e2) {
             log.error("[{}] PaymentStatusRestrictionException occurred", update.getUpdateId());
             String reply = polyglot.getText(replyLocale, "error.input.payment-status-restriction");
             telegramApiService.sendReplyTo(reply, update);
-            return;
         } catch (AttachmentTypeNotSupportedException e3) {
             log.error("[{}] AttachmentTypeNotSupportedException occurred", update.getUpdateId());
             String reply = polyglot.getText(replyLocale, "error.input.attachment-type-not-supported");
             telegramApiService.sendReplyTo(reply, update);
-            return;
         } catch (PaymentExpiredException e4) {
             log.error("[{}] PaymentExpiredException occurred", update.getUpdateId());
             String reply = polyglot.getText(replyLocale, "error.input.payment-expired");
             telegramApiService.sendReplyTo(reply, update);
-            return;
         } catch (Exception unknownException) {
             log.error("[{}] Unexpected error occurred", update.getUpdateId(), unknownException);
             String reply = polyglot.getText(replyLocale, "error.unknown");
             telegramApiService.sendReplyTo(reply, update);
-            return;
         }
-        log.warn("[{}] This point should not be reached, check previous logs", update.getUpdateId());
-        String reply = polyglot.getText(replyLocale, "error.unknown");
-        telegramApiService.sendReplyTo(reply, update);
+    }
+
+
+    private void sendErrorMessageToUser(CreateDisputeCommand createDisputeCommand, Locale replyLocale, Update update) {
+        var error = createDisputeCommand.getValidationError();
+        log.warn("Command validation error: {} for command: {}", error,
+                createDisputeCommand.getClass().getSimpleName());
+        String replyText = polyglot.getText(replyLocale, error.getMessageKey());
+        telegramApiService.sendReplyTo(replyText, update);
     }
 
     private String buildDisputeCreatedReply(MerchantDispute dispute, Locale replyLocale) {

@@ -27,7 +27,7 @@ public class DisputesHandler implements ProviderDisputesServiceSrv.Iface {
     private final HellgateService hellgateService;
     private final ProviderChatDao chatDao;
     private final DisputeCreationService disputeCreationService;
-    private final DisputeAttachmentService attachmentService;
+    private final AttachmentService attachmentService;
     private final TelegramNotificationService notificationService;
     private final DominantService dominantCacheService;
     private final AdminChatProperties adminChatProperties;
@@ -43,10 +43,8 @@ public class DisputesHandler implements ProviderDisputesServiceSrv.Iface {
             var invoice = hellgateService.getInvoice(trxContext.getInvoiceId());
             var providerRef = InvoiceUtil.getProviderRef(invoice, trxContext.getPaymentId());
             var providerChat = chatDao.getByProviderId(providerRef.getId());
-            if (providerChat.isEmpty()) {
-                return createDisputeWithoutProviderChat(disputeParams, providerRef);
-            }
-            return createDisputeWithProviderChat(disputeParams, providerChat.get());
+            return providerChat.map(chat -> createDisputeWithProviderChat(disputeParams, chat))
+                    .orElseGet(() -> createDisputeWithoutProviderChat(disputeParams, providerRef));
         } catch (Exception e) {
             throw new DisputeCreationException("Unable to create dispute, check stacktrace and previous logs", e);
         }
@@ -55,7 +53,7 @@ public class DisputesHandler implements ProviderDisputesServiceSrv.Iface {
     private DisputeCreatedResult createDisputeWithoutProviderChat(DisputeParams disputeParams,
                                                                  ProviderRef providerRef) {
         UUID disputeId = disputeCreationService.createProviderDispute(disputeParams);
-        InputFile file = attachmentService.prepareDisputeAttachment(disputeId, disputeParams);
+        InputFile file = attachmentService.prepareAttachment(disputeId, disputeParams);
         log.info("Provider chat not found for dispute: {}", disputeId);
         var provider = dominantCacheService.getProvider(providerRef);
         var trxContext = disputeParams.getTransactionContext();
@@ -63,7 +61,7 @@ public class DisputesHandler implements ProviderDisputesServiceSrv.Iface {
                 providerRef.getId(), provider.getName(),
                 trxContext.getProviderTrxId(),
                 trxContext.getInvoiceId() + "." + trxContext.getPaymentId(),
-                disputeParams.getDisputeId().get());
+                disputeParams.getDisputeId().orElseThrow());
         telegramApiService.sendMessageWithDocument(text, adminChatProperties.getId(),
                 adminChatProperties.getTopics().getUnknownProvider(), file);
         return createSuccessResult(disputeParams.getDisputeId().get());
@@ -71,8 +69,8 @@ public class DisputesHandler implements ProviderDisputesServiceSrv.Iface {
 
     private DisputeCreatedResult createDisputeWithProviderChat(DisputeParams disputeParams, ProviderChat chat) {
         UUID disputeId = disputeCreationService.createProviderDispute(disputeParams, chat);
-        InputFile file = attachmentService.prepareDisputeAttachment(disputeId, disputeParams);
-        notificationService.sendDisputeNotification(chat, disputeParams, file, disputeId);
+        InputFile file = attachmentService.prepareAttachment(disputeId, disputeParams);
+        notificationService.sendDisputeNotificationToProvider(chat, disputeParams, file, disputeId);
         return createSuccessResult(disputeId.toString());
     }
 

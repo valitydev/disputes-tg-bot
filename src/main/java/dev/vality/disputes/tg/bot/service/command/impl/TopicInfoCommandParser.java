@@ -17,7 +17,7 @@ public class TopicInfoCommandParser implements CommandParser<TopicInfoCommand> {
 
     @Override
     public TopicInfoCommand parse(@NonNull String messageText) {
-        // Команда не требует валидации параметров, так как не имеет аргументов
+        // Command has no args
         return TopicInfoCommand.builder()
                 .build();
     }

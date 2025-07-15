@@ -23,8 +23,8 @@ public class TelegramNotificationService {
     private final ProviderDisputeDao providerDisputeDao;
 
     @Transactional
-    public void sendDisputeNotification(ProviderChat chat, DisputeParams disputeParams,
-                                        InputFile file, UUID disputeId) {
+    public void sendDisputeNotificationToProvider(ProviderChat chat, DisputeParams disputeParams,
+                                                  InputFile file, UUID disputeId) {
         String text = prepareNotificationText(chat, disputeParams, disputeId);
         log.info("Sending dispute notification to provider");
         var response = telegramApiService.sendMessageWithDocument(text, chat.getSendToChatId(), file);
@@ -35,8 +35,8 @@ public class TelegramNotificationService {
         try {
             providerDisputeDao.updateTgMessageId(Long.valueOf(response.get().getMessageId()), disputeId);
         } catch (Exception e) {
-            log.error("Unable to update telegram messageId, source message will be deleted", e);
-            telegramApiService.deleteMessage(String.valueOf(response.get().getChatId()), response.get().getMessageId());
+            log.error("Unable to update telegram messageId, source message won't be deleted," +
+                    " but manual resolution may be required", e);
             throw e;
         }
     }

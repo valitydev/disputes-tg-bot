@@ -48,16 +48,11 @@ public class CreateDisputeByExternalIdHandler implements MerchantMessageHandler 
         Update update = message.getUpdate();
         String messageText = extractText(update);
         Locale replyLocale = polyglot.getLocale();
-        
         CreateDisputeByExternalIdCommand command = commandParser.parse(messageText);
-        
         if (command.hasValidationError()) {
-            log.warn("Command validation failed: {}", command.getValidationError().getMessageKey());
-            String reply = polyglot.getText(replyLocale, command.getValidationError().getMessageKey());
-            telegramApiService.sendReplyTo(reply, update);
+            sendErrorMessageToUser(command, replyLocale, update);
             return;
         }
-
         String invoiceId = findInvoiceIdByPartyIds(update, command.getExternalId(), replyLocale);
         if (invoiceId == null) {
             return; // Ошибка уже обработана в findInvoiceIdByPartyIds
@@ -67,6 +62,12 @@ public class CreateDisputeByExternalIdHandler implements MerchantMessageHandler 
                 .externalId(command.getExternalId())
                 .invoiceId(invoiceId).build();
         createDisputeHandler.handle(message, disputeInfoDto, replyLocale);
+    }
+
+    private void sendErrorMessageToUser(CreateDisputeByExternalIdCommand command, Locale replyLocale, Update update) {
+        log.warn("Command validation failed: {}", command.getValidationError().getMessageKey());
+        String reply = polyglot.getText(replyLocale, command.getValidationError().getMessageKey());
+        telegramApiService.sendReplyTo(reply, update);
     }
 
     private String findInvoiceIdByPartyIds(Update update, String externalId, Locale replyLocale) {

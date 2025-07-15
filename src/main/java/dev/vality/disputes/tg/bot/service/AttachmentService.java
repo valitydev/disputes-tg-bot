@@ -13,12 +13,12 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
-public class DisputeAttachmentService {
+public class AttachmentService {
 
     private final FileStorageService fileStorageService;
 
     @SneakyThrows
-    public InputFile prepareDisputeAttachment(UUID disputeId, DisputeParams disputeParams) {
+    public InputFile prepareAttachment(UUID disputeId, DisputeParams disputeParams) {
         var document = fileStorageService.processFile(disputeParams);
         String filename = FileUtil.createFileName(disputeId, document.getMediaType().getSubtype());
         return TelegramUtil.convertToInputFile(document, filename);

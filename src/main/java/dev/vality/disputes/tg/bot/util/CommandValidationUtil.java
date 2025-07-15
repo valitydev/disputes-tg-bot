@@ -1,10 +1,8 @@
 package dev.vality.disputes.tg.bot.util;
 
-import dev.vality.disputes.tg.bot.exception.CommandValidationException;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 
-import javax.swing.text.html.Option;
 import java.util.Optional;
 
 @Slf4j

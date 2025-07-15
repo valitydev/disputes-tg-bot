@@ -58,9 +58,7 @@ public class StatusDisputeHandler implements MerchantMessageHandler {
         StatusDisputeCommand command = commandParser.parse(messageText);
         
         if (command.hasValidationError()) {
-            log.warn("Command validation failed: {}", command.getValidationError().getMessageKey());
-            String reply = polyglot.getText(replyLocale, command.getValidationError().getMessageKey());
-            telegramApiService.sendReplyTo(reply, update);
+            sendErrorMessageToUser(command, replyLocale, update);
             return;
         }
 
@@ -74,6 +72,12 @@ public class StatusDisputeHandler implements MerchantMessageHandler {
         updateDisputesStatuses(matchingDisputes);
         String response = buildPlainTextResponse(matchingDisputes, replyLocale);
         telegramApiService.sendReplyTo(response, update);
+    }
+
+    private void sendErrorMessageToUser(StatusDisputeCommand command, Locale replyLocale, Update update) {
+        log.warn("Command validation failed: {}", command.getValidationError().getMessageKey());
+        String reply = polyglot.getText(replyLocale, command.getValidationError().getMessageKey());
+        telegramApiService.sendReplyTo(reply, update);
     }
 
     private List<MerchantDispute> findDisputes(DisputeInfoDto paymentInfo) {

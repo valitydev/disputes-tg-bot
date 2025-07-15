@@ -6,7 +6,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.GetFile;
 import org.telegram.telegrambots.meta.api.methods.groupadministration.GetChat;
-import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage;
 import org.telegram.telegrambots.meta.api.objects.InputFile;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.chat.ChatFullInfo;
@@ -114,16 +113,6 @@ public class TelegramApiService {
         } catch (TelegramApiException e) {
             log.error("Failed to send message", e);
             return Optional.empty();
-        }
-    }
-
-    public void deleteMessage(String chatId, Integer messageId) {
-        try {
-            DeleteMessage deleteMessage = new DeleteMessage(chatId, messageId);
-            telegramClient.execute(deleteMessage);
-            log.info("Source message was deleted");
-        } catch (TelegramApiException e) {
-            log.error("Failed to delete message", e);
         }
     }
 

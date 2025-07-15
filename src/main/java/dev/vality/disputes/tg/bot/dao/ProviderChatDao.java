@@ -49,7 +49,7 @@ public class ProviderChatDao extends AbstractGenericDao {
         try {
             var set = getDslContext().update(PROVIDER_CHAT)
                     .set(PROVIDER_CHAT.ENABLED, false)
-                    .where(PROVIDER_CHAT.PROVIDER_ID.eq(providerId));
+                    .where(PROVIDER_CHAT.PROVIDER_ID.eq(providerId).and(PROVIDER_CHAT.ENABLED));
             executeOne(set);
         } catch (JdbcUpdateAffectedIncorrectNumberOfRowsException e1) {
             log.warn("Unable to disable provider chat. Expected 1 row, got {}", e1.getActualRowsAffected());
