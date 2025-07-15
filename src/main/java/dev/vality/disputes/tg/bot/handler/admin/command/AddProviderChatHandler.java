@@ -3,12 +3,13 @@ package dev.vality.disputes.tg.bot.handler.admin.command;
 import dev.vality.disputes.tg.bot.config.properties.AdminChatProperties;
 import dev.vality.disputes.tg.bot.dao.ProviderChatDao;
 import dev.vality.disputes.tg.bot.domain.tables.pojos.ProviderChat;
-import dev.vality.disputes.tg.bot.exception.CommandValidationException;
 import dev.vality.disputes.tg.bot.handler.admin.AdminMessageHandler;
+import dev.vality.disputes.tg.bot.service.Polyglot;
 import dev.vality.disputes.tg.bot.service.TelegramApiService;
-import dev.vality.disputes.tg.bot.util.CommandValidationUtil;
+import dev.vality.disputes.tg.bot.service.command.impl.AddProviderChatCommandParser;
 import dev.vality.disputes.tg.bot.util.TelegramUtil;
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,12 +22,12 @@ import static dev.vality.disputes.tg.bot.util.TelegramUtil.extractText;
 @RequiredArgsConstructor
 public class AddProviderChatHandler implements AdminMessageHandler {
 
-    private static final String LATIN_SINGLE_LETTER = "/ap ";
-    private static final String FULL_COMMAND = "/add_provider ";
 
     private final AdminChatProperties adminChatProperties;
     private final ProviderChatDao providerChatDao;
     private final TelegramApiService telegramApiService;
+    private final Polyglot polyglot;
+    private final AddProviderChatCommandParser addProviderChatCommandParser;
 
     @Override
     public boolean filter(Update update) {
@@ -42,45 +43,37 @@ public class AddProviderChatHandler implements AdminMessageHandler {
         var threadId = update.getMessage().getMessageThreadId();
         boolean isChatManagementTopic = adminChatProperties.getTopics().getChatManagement().equals(threadId);
 
-        return isChatManagementTopic && (messageText.startsWith(LATIN_SINGLE_LETTER)
-                || messageText.startsWith(FULL_COMMAND));
+        return isChatManagementTopic && addProviderChatCommandParser.canParse(messageText);
     }
 
     @Override
+    @SneakyThrows
     @Transactional
     public void handle(Update update) {
         log.info("[{}] Processing add provider chat binding request from {}",
                 update.getUpdateId(), TelegramUtil.extractUserInfo(update));
         String messageText = extractText(update);
-        try {
-            var providerChat = parse(messageText);
-            providerChatDao.save(providerChat);
-            telegramApiService.setThumbUpReaction(update.getMessage().getChatId(), update.getMessage().getMessageId());
-        } catch (CommandValidationException e) {
-            // TODO: Unify all command parsing methods
-            log.warn("Unable to process user input", e);
-            telegramApiService.sendReplyTo(e.getMessage(), update);
-        }
-    }
+        log.info("[{}] Extracted text: {}", update.getUpdateId(), messageText);
 
-    ProviderChat parse(String text) throws CommandValidationException {
-        String[] tokens = text.split("\\s+", 6);
-        if (tokens.length < 6) {
-            throw new CommandValidationException("Expected 5 arguments, got %s".formatted(tokens.length - 1));
+        var addProviderChatCommand = addProviderChatCommandParser.parse(messageText);
+        if (addProviderChatCommand.hasValidationError()) {
+            var error = addProviderChatCommand.getValidationError();
+            log.warn("Command validation error: {} for command: {}", error,
+                    addProviderChatCommand.getClass().getSimpleName());
+            String replyText = polyglot.getText(polyglot.getLocale(), error.getMessageKey());
+            telegramApiService.sendReplyTo(replyText, update);
+            return;
         }
-        var providerId = CommandValidationUtil.extractInteger(tokens[1], "Provider ID");
-        var sendToChatId = CommandValidationUtil.extractLong(tokens[2], "Send to chat ID");
-        var sendToTopicId = CommandValidationUtil.extractNullableInteger(tokens[3], "Send to topic ID");
-        var readFromChatId = CommandValidationUtil.extractLong(tokens[4], "Read from chat ID");
-        var template = CommandValidationUtil.extractNullableString(tokens[5]);
 
         ProviderChat providerChat = new ProviderChat();
-        providerChat.setProviderId(providerId);
-        providerChat.setSendToChatId(sendToChatId);
-        providerChat.setSendToTopicId(sendToTopicId);
-        providerChat.setReadFromChatId(readFromChatId);
-        providerChat.setTemplate(template);
-        return providerChat;
+        providerChat.setProviderId(addProviderChatCommand.getProviderId());
+        providerChat.setSendToChatId(addProviderChatCommand.getSendToChatId());
+        providerChat.setSendToTopicId(addProviderChatCommand.getSendToTopicId());
+        providerChat.setReadFromChatId(addProviderChatCommand.getReadFromChatId());
+        providerChat.setTemplate(addProviderChatCommand.getTemplate());
+
+        providerChatDao.save(providerChat);
+        telegramApiService.setThumbUpReaction(update.getMessage().getChatId(), update.getMessage().getMessageId());
     }
 
 }

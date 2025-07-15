@@ -8,12 +8,13 @@ import dev.vality.disputes.tg.bot.domain.enums.DisputeStatus;
 import dev.vality.disputes.tg.bot.domain.tables.pojos.MerchantDispute;
 import dev.vality.disputes.tg.bot.dto.DisputeInfoDto;
 import dev.vality.disputes.tg.bot.dto.MerchantMessageDto;
+import dev.vality.disputes.tg.bot.dto.command.StatusDisputeCommand;
 import dev.vality.disputes.tg.bot.exception.UnexpectedException;
 import dev.vality.disputes.tg.bot.handler.merchant.MerchantMessageHandler;
 import dev.vality.disputes.tg.bot.service.Polyglot;
 import dev.vality.disputes.tg.bot.service.TelegramApiService;
+import dev.vality.disputes.tg.bot.service.command.impl.StatusDisputeCommandParser;
 import dev.vality.disputes.tg.bot.service.external.DisputesApiService;
-import dev.vality.disputes.tg.bot.util.TextParsingUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -36,10 +37,8 @@ import static dev.vality.disputes.tg.bot.util.TelegramUtil.extractText;
 @SuppressWarnings("MissingSwitchDefault")
 public class StatusDisputeHandler implements MerchantMessageHandler {
 
-    private static final String LATIN_SINGLE_LETTER = "/s ";
-    private static final String FULL_COMMAND = "/status ";
-
     private final MerchantDisputeDao merchantDisputeDao;
+    private final StatusDisputeCommandParser commandParser;
     private final Polyglot polyglot;
     private final DisputesApiService disputesApiService;
     private final TelegramApiService telegramApiService;
@@ -47,12 +46,7 @@ public class StatusDisputeHandler implements MerchantMessageHandler {
     @Override
     public boolean filter(MerchantMessageDto message) {
         String messageText = extractText(message.getUpdate());
-        if (messageText == null) {
-            return false;
-        }
-
-        return messageText.startsWith(LATIN_SINGLE_LETTER)
-                || messageText.startsWith(FULL_COMMAND);
+        return commandParser.canParse(messageText);
     }
 
     @Override
@@ -60,16 +54,17 @@ public class StatusDisputeHandler implements MerchantMessageHandler {
         Update update = message.getUpdate();
         String messageText = extractText(update);
         Locale replyLocale = polyglot.getLocale(message.getMerchantChat().getLocale());
-        Optional<DisputeInfoDto> paymentInfoOptional = TextParsingUtil.getDisputeInfo(messageText);
-
-        if (paymentInfoOptional.isEmpty()) {
-            log.warn("Payment info not found, message text: {}", messageText);
-            String reply = polyglot.getText(replyLocale, "error.input.dispute-or-invoice-missing");
+        
+        StatusDisputeCommand command = commandParser.parse(messageText);
+        
+        if (command.hasValidationError()) {
+            log.warn("Command validation failed: {}", command.getValidationError().getMessageKey());
+            String reply = polyglot.getText(replyLocale, command.getValidationError().getMessageKey());
             telegramApiService.sendReplyTo(reply, update);
             return;
         }
 
-        List<MerchantDispute> matchingDisputes = findDisputes(paymentInfoOptional.get());
+        List<MerchantDispute> matchingDisputes = findDisputes(command.getDisputeInfo());
         if (matchingDisputes.isEmpty()) {
             log.info("Dispute not found: {}", messageText);
             String reply = polyglot.getText(replyLocale, "error.input.dispute-not-found");

@@ -13,11 +13,11 @@ import dev.vality.disputes.tg.bot.exception.*;
 import dev.vality.disputes.tg.bot.handler.merchant.MerchantMessageHandler;
 import dev.vality.disputes.tg.bot.service.Polyglot;
 import dev.vality.disputes.tg.bot.service.TelegramApiService;
+import dev.vality.disputes.tg.bot.service.command.impl.CreateDisputeCommandParser;
 import dev.vality.disputes.tg.bot.service.external.DisputesApiService;
 import dev.vality.disputes.tg.bot.service.external.HellgateService;
 import dev.vality.disputes.tg.bot.util.PolyglotUtil;
 import dev.vality.disputes.tg.bot.util.TelegramUtil;
-import dev.vality.disputes.tg.bot.util.TextParsingUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -29,7 +29,6 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Locale;
-import java.util.Optional;
 import java.util.UUID;
 
 import static dev.vality.disputes.tg.bot.util.TelegramUtil.extractText;
@@ -40,9 +39,7 @@ import static dev.vality.disputes.tg.bot.util.TelegramUtil.hasAttachment;
 @RequiredArgsConstructor
 public class CreateDisputeHandler implements MerchantMessageHandler {
 
-    private static final String LATIN_SINGLE_LETTER = "/c ";
-    private static final String CYRILLIC_SINGLE_LETTER = "/с ";
-    private static final String FULL_COMMAND = "/check ";
+
 
     private final MerchantDisputeDao merchantDisputeDao;
     private final Polyglot polyglot;
@@ -50,6 +47,7 @@ public class CreateDisputeHandler implements MerchantMessageHandler {
     private final HellgateService hellgateService;
     private final UpdateToAttachmentConverter attachmentConverter;
     private final TelegramApiService telegramApiService;
+    private final CreateDisputeCommandParser createDisputeCommandParser;
 
     @Override
     public boolean filter(MerchantMessageDto message) {
@@ -59,9 +57,7 @@ public class CreateDisputeHandler implements MerchantMessageHandler {
             return false;
         }
 
-        return messageText.startsWith(LATIN_SINGLE_LETTER)
-                || messageText.startsWith(CYRILLIC_SINGLE_LETTER)
-                || messageText.startsWith(FULL_COMMAND);
+        return createDisputeCommandParser.canParse(messageText);
     }
 
     @Override
@@ -70,15 +66,21 @@ public class CreateDisputeHandler implements MerchantMessageHandler {
         log.info("[{}] Processing create dispute request", message.getUpdate().getUpdateId());
         Update update = message.getUpdate();
         String messageText = extractText(update);
-        Optional<DisputeInfoDto> paymentInfoOptional = TextParsingUtil.getDisputeInfo(messageText);
+        log.info("[{}] Extracted text: {}", update.getUpdateId(), messageText);
+        
+        var createDisputeCommand = createDisputeCommandParser.parse(messageText);
         Locale replyLocale = polyglot.getLocale(message.getMerchantChat().getLocale());
-        if (paymentInfoOptional.isEmpty()) {
-            log.warn("[{}] Payment info not found, message text: {}", update.getUpdateId(), messageText);
-            String reply = polyglot.getText(replyLocale, "error.input.invoice-missing");
-            telegramApiService.sendReplyTo(reply, update);
+        
+        if (createDisputeCommand.hasValidationError()) {
+            var error = createDisputeCommand.getValidationError();
+            log.warn("Command validation error: {} for command: {}", error,
+                    createDisputeCommand.getClass().getSimpleName());
+            String replyText = polyglot.getText(replyLocale, error.getMessageKey());
+            telegramApiService.sendReplyTo(replyText, update);
             return;
         }
-        handle(message, paymentInfoOptional.get(), replyLocale);
+        
+        handle(message, createDisputeCommand.getDisputeInfo(), replyLocale);
     }
 
     @Transactional

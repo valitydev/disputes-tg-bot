@@ -2,12 +2,13 @@ package dev.vality.disputes.tg.bot.handler.admin.command;
 
 import dev.vality.disputes.tg.bot.config.properties.AdminChatProperties;
 import dev.vality.disputes.tg.bot.dao.MerchantChatDao;
-import dev.vality.disputes.tg.bot.exception.CommandValidationException;
 import dev.vality.disputes.tg.bot.handler.admin.AdminMessageHandler;
+import dev.vality.disputes.tg.bot.service.Polyglot;
 import dev.vality.disputes.tg.bot.service.TelegramApiService;
-import dev.vality.disputes.tg.bot.util.CommandValidationUtil;
+import dev.vality.disputes.tg.bot.service.command.impl.DisableMerchantChatCommandParser;
 import dev.vality.disputes.tg.bot.util.TelegramUtil;
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,12 +21,12 @@ import static dev.vality.disputes.tg.bot.util.TelegramUtil.extractText;
 @RequiredArgsConstructor
 public class DisableMerchantChatHandler implements AdminMessageHandler {
 
-    private static final String LATIN_SINGLE_LETTER = "/dm ";
-    private static final String FULL_COMMAND = "/disable_merch ";
 
     private final AdminChatProperties adminChatProperties;
     private final MerchantChatDao merchantChatDao;
     private final TelegramApiService telegramApiService;
+    private final Polyglot polyglot;
+    private final DisableMerchantChatCommandParser disableMerchantChatCommandParser;
 
     @Override
     public boolean filter(Update update) {
@@ -41,40 +42,31 @@ public class DisableMerchantChatHandler implements AdminMessageHandler {
         var threadId = update.getMessage().getMessageThreadId();
         boolean isChatManagementTopic = adminChatProperties.getTopics().getChatManagement().equals(threadId);
 
-        return isChatManagementTopic && (messageText.startsWith(LATIN_SINGLE_LETTER)
-                || messageText.startsWith(FULL_COMMAND));
+        return isChatManagementTopic && disableMerchantChatCommandParser.canParse(messageText);
     }
 
     @Override
+    @SneakyThrows
     @Transactional
     public void handle(Update update) {
         log.info("[{}] Processing disable merchant chat binding request from {}",
                 update.getUpdateId(), TelegramUtil.extractUserInfo(update));
         String messageText = extractText(update);
         log.info("[{}] Extracted text: {}", update.getUpdateId(), messageText);
-        try {
-            //TODO: Unify command parsing, possible npe
-            var chatId = getChatId(messageText);
-            var chatInfo = telegramApiService.getChatInfo(chatId);
-            log.info("[{}] Got chat form telegram: {}", update.getUpdateId(), chatInfo);
-            merchantChatDao.disable(chatInfo.get().getId());
-            log.info("[{}] Chat disabled successfully", update.getUpdateId());
-            telegramApiService.setThumbUpReaction(update.getMessage().getChatId(),  update.getMessage().getMessageId());
-        } catch (CommandValidationException e) {
-            log.warn("Unable to process user input", e);
-            var response = TelegramUtil.buildPlainTextResponse(adminChatProperties.getId(), e.getMessage());
-            response.setReplyToMessageId(update.getMessage().getMessageId());
-            response.setMessageThreadId(update.getMessage().getMessageThreadId());
-            telegramApiService.sendReplyTo(e.getMessage(), update);
-        }
-    }
 
-    private Long getChatId(String text) throws CommandValidationException {
-        String[] tokens = text.split("\\s+", 3);
-        if (tokens.length < 2) {
-            throw new CommandValidationException("Expected 1 arguments, got %s".formatted(tokens.length - 1));
+        var disableMerchantChatCommand = disableMerchantChatCommandParser.parse(messageText);
+        if (disableMerchantChatCommand.hasValidationError()) {
+            var error = disableMerchantChatCommand.getValidationError();
+            log.warn("Command validation error: {} for command: {}", error,
+                    disableMerchantChatCommand.getClass().getSimpleName());
+            String replyText = polyglot.getText(polyglot.getLocale(), error.getMessageKey());
+            telegramApiService.sendReplyTo(replyText, update);
+            return;
         }
-        return CommandValidationUtil.extractLong(tokens[1], "Chat ID");
+
+        merchantChatDao.disable(disableMerchantChatCommand.getChatId());
+        log.info("[{}] Chat disabled successfully", update.getUpdateId());
+        telegramApiService.setThumbUpReaction(update.getMessage().getChatId(), update.getMessage().getMessageId());
     }
 
 }

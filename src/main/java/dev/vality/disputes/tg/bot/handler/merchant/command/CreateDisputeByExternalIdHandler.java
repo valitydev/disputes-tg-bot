@@ -5,13 +5,14 @@ import dev.vality.disputes.tg.bot.dao.MerchantPartyDao;
 import dev.vality.disputes.tg.bot.domain.tables.pojos.MerchantParty;
 import dev.vality.disputes.tg.bot.dto.DisputeInfoDto;
 import dev.vality.disputes.tg.bot.dto.MerchantMessageDto;
+import dev.vality.disputes.tg.bot.dto.command.CreateDisputeByExternalIdCommand;
 import dev.vality.disputes.tg.bot.exception.BenderException;
 import dev.vality.disputes.tg.bot.handler.merchant.MerchantMessageHandler;
 import dev.vality.disputes.tg.bot.service.Polyglot;
 import dev.vality.disputes.tg.bot.service.TelegramApiService;
+import dev.vality.disputes.tg.bot.service.command.impl.CreateDisputeByExternalIdCommandParser;
 import dev.vality.disputes.tg.bot.service.external.BenderService;
 import dev.vality.disputes.tg.bot.util.TelegramUtil;
-import dev.vality.disputes.tg.bot.util.TextParsingUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -19,7 +20,6 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 
 import java.util.List;
 import java.util.Locale;
-import java.util.Optional;
 
 import static dev.vality.disputes.tg.bot.util.TelegramUtil.extractText;
 
@@ -28,11 +28,8 @@ import static dev.vality.disputes.tg.bot.util.TelegramUtil.extractText;
 @RequiredArgsConstructor
 public class CreateDisputeByExternalIdHandler implements MerchantMessageHandler {
 
-    private static final String LATIN_SINGLE_LETTER = "/e ";
-    private static final String CYRILLIC_SINGLE_LETTER = "/е ";
-    private static final String FULL_COMMAND = "/ext ";
-
     private final CreateDisputeHandler createDisputeHandler;
+    private final CreateDisputeByExternalIdCommandParser commandParser;
     private final Polyglot polyglot;
     private final BenderService benderService;
     private final TelegramApiService telegramApiService;
@@ -42,13 +39,7 @@ public class CreateDisputeByExternalIdHandler implements MerchantMessageHandler 
     @Override
     public boolean filter(MerchantMessageDto message) {
         String messageText = extractText(message.getUpdate());
-        if (messageText == null) {
-            return false;
-        }
-
-        return messageText.startsWith(LATIN_SINGLE_LETTER)
-                || messageText.startsWith(CYRILLIC_SINGLE_LETTER)
-                || messageText.startsWith(FULL_COMMAND);
+        return commandParser.canParse(messageText);
     }
 
     @Override
@@ -57,21 +48,23 @@ public class CreateDisputeByExternalIdHandler implements MerchantMessageHandler 
         Update update = message.getUpdate();
         String messageText = extractText(update);
         Locale replyLocale = polyglot.getLocale();
-        Optional<String> externalId = TextParsingUtil.getExternalId(messageText);
-        if (externalId.isEmpty()) {
-            log.warn("External id not found, message text: {}", messageText);
-            String reply = polyglot.getText(polyglot.getLocale(), "error.input.external-missing");
+        
+        CreateDisputeByExternalIdCommand command = commandParser.parse(messageText);
+        
+        if (command.hasValidationError()) {
+            log.warn("Command validation failed: {}", command.getValidationError().getMessageKey());
+            String reply = polyglot.getText(replyLocale, command.getValidationError().getMessageKey());
             telegramApiService.sendReplyTo(reply, update);
             return;
         }
 
-        String invoiceId = findInvoiceIdByPartyIds(update, externalId.get(), replyLocale);
+        String invoiceId = findInvoiceIdByPartyIds(update, command.getExternalId(), replyLocale);
         if (invoiceId == null) {
             return; // Ошибка уже обработана в findInvoiceIdByPartyIds
         }
 
         DisputeInfoDto disputeInfoDto = DisputeInfoDto.builder()
-                .externalId(externalId.get())
+                .externalId(command.getExternalId())
                 .invoiceId(invoiceId).build();
         createDisputeHandler.handle(message, disputeInfoDto, replyLocale);
     }
