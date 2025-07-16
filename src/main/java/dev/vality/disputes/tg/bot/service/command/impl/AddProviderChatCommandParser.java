@@ -58,12 +58,11 @@ public class AddProviderChatCommandParser implements CommandParser<AddProviderCh
                     .validationError(CommandValidationError.INVALID_CHAT_ID)
                     .build();
         }
-
         // Extract the remaining string as template (4th argument) from original messageText
         String template = null;
-        String[] parts = messageText.split("\\s+", 5);
-        if (parts.length > 4) {
-            template = CommandValidationUtil.extractNullableString(parts[4]);
+        String[] parts = messageText.split("\\s+", 6);
+        if (parts.length > 5) {
+            template = CommandValidationUtil.extractNullableString(parts[5]);
         }
 
         return AddProviderChatCommand.builder()
