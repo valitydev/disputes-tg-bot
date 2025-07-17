@@ -25,11 +25,13 @@ public class ProviderRootHandler implements TelegramEventHandler {
 
     @Override
     public boolean filter(Update message) {
+        log.debug("Filtering inside ProviderRootHandler");
         Long chatId = TelegramUtil.getChatId(message);
         if (chatId == null) {
             return false;
         }
         Optional<ProviderChat> chat = providerChatDao.get(chatId);
+        log.debug("ProviderRootHandler filtering result: {}", chat.isPresent());
         return chat.isPresent();
     }
 

@@ -20,7 +20,10 @@ public class AdminRootHandler implements TelegramEventHandler {
 
     @Override
     public boolean filter(Update message) {
+        log.debug("Filtering inside AdminRootHandler");
         Long chatId = TelegramUtil.getChatId(message);
+        var isApplicable = isSupportChat(chatId) || isBotMembershipStatusChanged(message);
+        log.debug("MerchantRootHandler filtering result: {}", isApplicable);
         return isSupportChat(chatId) || isBotMembershipStatusChanged(message);
     }
 

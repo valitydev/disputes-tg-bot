@@ -23,11 +23,13 @@ public class MerchantRootHandler implements TelegramEventHandler {
 
     @Override
     public boolean filter(Update message) {
+        log.debug("Filtering inside MerchantRootHandler");
         Long chatId = TelegramUtil.getChatId(message);
         if (chatId == null) {
             return false;
         }
         Optional<MerchantChat> chat = merchantChatDao.get(chatId);
+        log.debug("MerchantRootHandler filtering result: {}", chat.isPresent());
         return chat.isPresent();
     }
 

@@ -38,6 +38,7 @@ public class DisputesBot implements SpringLongPollingBot, LongPollingSingleThrea
         log.debug("[{}] Update received: {}", update.getUpdateId(), update);
         var applicableHandlers = handlers.stream()
                 .filter(handler -> handler.filter(update)).collect(Collectors.toSet());
+        log.debug("[{}] Found {} applicable root handlers", update.getUpdateId(), applicableHandlers.size());
         applicableHandlers.forEach(
                 handler -> handler.handle(update));
         if (applicableHandlers.isEmpty()) {
