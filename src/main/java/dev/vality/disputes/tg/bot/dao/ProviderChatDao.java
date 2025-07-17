@@ -38,6 +38,13 @@ public class ProviderChatDao extends AbstractGenericDao {
         return Optional.ofNullable(fetchOne(query, providerChatRowMapper));
     }
 
+    public Optional<ProviderChat> getByReadFromChatId(long chatId) {
+        var query = getDslContext().selectFrom(PROVIDER_CHAT)
+                .where(PROVIDER_CHAT.READ_FROM_CHAT_ID.eq(chatId)
+                        .and(PROVIDER_CHAT.ENABLED));
+        return Optional.ofNullable(fetchOne(query, providerChatRowMapper));
+    }
+
     public void save(ProviderChat providerChat) {
         var record = getDslContext().newRecord(PROVIDER_CHAT, providerChat);
         var query = getDslContext().insertInto(PROVIDER_CHAT)

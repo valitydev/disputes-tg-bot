@@ -35,14 +35,19 @@ public class DisputesBot implements SpringLongPollingBot, LongPollingSingleThrea
 
     @Override
     public void consume(Update update) {
-        log.debug("[{}] Update received: {}", update.getUpdateId(), update);
-        var applicableHandlers = handlers.stream()
-                .filter(handler -> handler.filter(update)).collect(Collectors.toSet());
-        log.debug("[{}] Found {} applicable root handlers", update.getUpdateId(), applicableHandlers.size());
-        applicableHandlers.forEach(
-                handler -> handler.handle(update));
-        if (applicableHandlers.isEmpty()) {
-            log.info("[{}] No suitable handler found for update: {}", update.getUpdateId(), update);
+        try {
+            log.debug("[{}] Update received: {}", update.getUpdateId(), update);
+            var applicableHandlers = handlers.stream()
+                    .filter(handler -> handler.filter(update)).collect(Collectors.toSet());
+            log.debug("[{}] Found {} applicable root handlers", update.getUpdateId(), applicableHandlers.size());
+            applicableHandlers.forEach(
+                    handler -> handler.handle(update));
+            if (applicableHandlers.isEmpty()) {
+                log.info("[{}] No suitable handler found for update: {}", update.getUpdateId(), update);
+            }
+        } catch (Exception e) {
+            log.error("Unexpected error occurred: ", e);
+            throw e;
         }
     }
 
