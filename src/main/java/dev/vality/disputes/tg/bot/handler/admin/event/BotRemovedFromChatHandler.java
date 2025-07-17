@@ -42,7 +42,7 @@ public class BotRemovedFromChatHandler implements AdminMessageHandler {
         log.info("Bot was removed from chat: '{}' with id: '{}'", chat.getTitle(),
                 chat.getId());
         String text = polyglot.getText("support.info.bot-removed-from-chat",
-                chat.getTitle(), chat.getId());
+                chat.getTitle(), chat.getId().toString());
         telegramApiService.sendMessage(text, adminChatProperties.getId(),
                 adminChatProperties.getTopics().getServiceInfo());
     }

@@ -39,7 +39,7 @@ public class BotAddedToChatHandler implements AdminMessageHandler {
         var chat = update.getMyChatMember().getChat();
         log.info("Bot was added to chat: '{}' with id: '{}'", chat.getTitle(), chat.getId());
 
-        String text = polyglot.getText("support.info.bot-added-to-chat", chat.getTitle(), chat.getId());
+        String text = polyglot.getText("support.info.bot-added-to-chat", chat.getTitle(), chat.getId().toString());
         telegramApiService.sendMessage(text, adminChatProperties.getId(),
                 adminChatProperties.getTopics().getServiceInfo());
     }
