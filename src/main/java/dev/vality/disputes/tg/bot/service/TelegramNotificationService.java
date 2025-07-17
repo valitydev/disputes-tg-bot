@@ -3,7 +3,9 @@ package dev.vality.disputes.tg.bot.service;
 import dev.vality.disputes.provider.DisputeParams;
 import dev.vality.disputes.tg.bot.dao.ProviderDisputeDao;
 import dev.vality.disputes.tg.bot.domain.tables.pojos.ProviderChat;
+import dev.vality.disputes.tg.bot.service.external.HellgateService;
 import dev.vality.disputes.tg.bot.util.FormatUtil;
+import dev.vality.disputes.tg.bot.util.InvoiceUtil;
 import dev.vality.disputes.tg.bot.util.TemplateUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,6 +23,7 @@ public class TelegramNotificationService {
     private final Polyglot polyglot;
     private final TelegramApiService telegramApiService;
     private final ProviderDisputeDao providerDisputeDao;
+    private final HellgateService hellgateService;
 
     @Transactional
     public void sendDisputeNotificationToProvider(ProviderChat chat, DisputeParams disputeParams,
@@ -44,12 +47,25 @@ public class TelegramNotificationService {
 
     private String prepareNotificationText(ProviderChat chat, DisputeParams disputeParams, UUID disputeId) {
         if (chat.getTemplate() != null) {
-            return TemplateUtil.prepareTemplate(chat, disputeParams);
+            String terminalId = getTerminalId(disputeParams);
+            return TemplateUtil.prepareTemplate(chat, disputeParams, terminalId);
         } else {
             return polyglot.getText("dispute.provider.create",
                     disputeParams.getTransactionContext().getProviderTrxId(),
                     FormatUtil.formatPaymentId(disputeParams.getTransactionContext()),
                     disputeId.toString());
+        }
+    }
+
+    private String getTerminalId(DisputeParams disputeParams) {
+        try {
+            var invoice = hellgateService.getInvoice(disputeParams.getTransactionContext().getInvoiceId());
+            var terminalId = InvoiceUtil.getTerminalRef(invoice,
+                    disputeParams.getTransactionContext().getPaymentId()).getId();
+            return String.valueOf(terminalId);
+        } catch (Exception e) {
+            log.error("Unable to obtain terminalRef", e);
+            return "null";
         }
     }
 } 

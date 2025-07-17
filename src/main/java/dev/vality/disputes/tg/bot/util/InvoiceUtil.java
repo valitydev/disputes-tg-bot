@@ -1,6 +1,8 @@
 package dev.vality.disputes.tg.bot.util;
 
+import dev.vality.damsel.domain.PaymentRoute;
 import dev.vality.damsel.domain.ProviderRef;
+import dev.vality.damsel.domain.TerminalRef;
 import dev.vality.damsel.domain.TransactionInfo;
 import dev.vality.damsel.payment_processing.Invoice;
 import dev.vality.damsel.payment_processing.InvoicePayment;
@@ -29,6 +31,10 @@ public class InvoiceUtil {
     }
 
     public static ProviderRef getProviderRef(Invoice invoice, String paymentId) {
+        return getRoute(invoice, paymentId).getProvider();
+    }
+
+    public static PaymentRoute getRoute(Invoice invoice, String paymentId) {
         return invoice.getPayments().stream()
                 .filter(p -> paymentId.equals(p.getPayment().getId()) && p.isSetRoute())
                 .findFirst()
@@ -36,6 +42,10 @@ public class InvoiceUtil {
                         String.format("Invoice %s and Payment %s with filled route not found!",
                                 invoice.getInvoice().getId(),
                                 paymentId)))
-                .getRoute().getProvider();
+                .getRoute();
+    }
+
+    public static TerminalRef getTerminalRef(Invoice invoice, String paymentId) {
+        return getRoute(invoice, paymentId).getTerminal();
     }
 }

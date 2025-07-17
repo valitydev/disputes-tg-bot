@@ -21,13 +21,10 @@ public class FormatUtil {
         if (disputeParams.getCash().isEmpty()) {
             return "null";
         }
-
         var cash = disputeParams.getCash().get();
-        var formattedAmount =
-                new BigDecimal(cash.getAmount())
-                        .movePointLeft(cash.getCurrency().getExponent())
-                        .stripTrailingZeros()
-                        .toPlainString();
-        return "%s %s".formatted(formattedAmount, cash.getCurrency().getSymbolicCode());
+        return new BigDecimal(cash.getAmount())
+                .movePointLeft(cash.getCurrency().getExponent())
+                .stripTrailingZeros()
+                .toPlainString();
     }
 } 
