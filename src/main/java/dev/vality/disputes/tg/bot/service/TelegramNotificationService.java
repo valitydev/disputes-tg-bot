@@ -44,7 +44,7 @@ public class TelegramNotificationService {
 
     private String prepareNotificationText(ProviderChat chat, DisputeParams disputeParams, UUID disputeId) {
         if (chat.getTemplate() != null) {
-            return TemplateUtil.prepareTemplate(chat.getTemplate(), disputeParams);
+            return TemplateUtil.prepareTemplate(chat, disputeParams);
         } else {
             return polyglot.getText("dispute.provider.create",
                     disputeParams.getTransactionContext().getProviderTrxId(),

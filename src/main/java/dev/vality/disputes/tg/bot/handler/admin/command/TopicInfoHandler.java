@@ -60,7 +60,7 @@ public class TopicInfoHandler implements AdminMessageHandler {
         var chat = update.getMessage().getChat();
         var threadId = update.getMessage().getMessageThreadId();
         String text = polyglot.getText("support.info.topic-info",
-                chat.getTitle(), chat.getId(), threadId);
+                chat.getTitle(), chat.getId().toString(), threadId);
         var response = TelegramUtil.buildPlainTextResponse(adminChatProperties.getId(), text);
         response.setMessageThreadId(threadId);
         telegramApiService.sendMessage(text, adminChatProperties.getId(), threadId);
