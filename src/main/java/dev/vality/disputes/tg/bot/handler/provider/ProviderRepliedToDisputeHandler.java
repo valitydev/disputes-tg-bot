@@ -39,6 +39,7 @@ import java.util.Optional;
 
 import static dev.vality.disputes.tg.bot.config.model.ResponsePattern.ResponseType.APPROVED;
 import static dev.vality.disputes.tg.bot.util.TelegramUtil.extractText;
+import static dev.vality.disputes.tg.bot.util.TelegramUtil.getMessage;
 
 @Slf4j
 @Component
@@ -62,7 +63,7 @@ public class ProviderRepliedToDisputeHandler implements ProviderMessageHandler {
         if (text == null) {
             return false;
         }
-        var tgMessage = message.getUpdate().getMessage();
+        var tgMessage = getMessage(message.getUpdate());
         // Is reply
         if (!tgMessage.isReply()) {
             return false;
