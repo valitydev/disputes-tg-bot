@@ -46,8 +46,7 @@ public class DisputesBot implements SpringLongPollingBot, LongPollingSingleThrea
                 log.info("[{}] No suitable handler found for update: {}", update.getUpdateId(), update);
             }
         } catch (Exception e) {
-            log.error("Unexpected error occurred: ", e);
-            throw e;
+            log.error("[{}] Unexpected error occurred: ", update.getUpdateId(), e);
         }
     }
 

@@ -14,14 +14,15 @@ public class ResponseParser {
     private final List<ResponsePattern> providerResponseDictionary;
 
     public Optional<ResponsePattern> findMatchingPattern(String response) {
+        var lowerCaseResp = response.toLowerCase();
         return providerResponseDictionary.stream()
                 .filter(responsePattern ->
-                        response.contains(responsePattern.getInclude())
-                                && !match(responsePattern.getExclude(), response))
+                        lowerCaseResp.contains(responsePattern.getInclude().toLowerCase())
+                                && !match(responsePattern.getExclude(), lowerCaseResp))
                 .findFirst();
     }
 
     private boolean match(List<String> phrases, String response) {
-        return phrases.stream().anyMatch(response::contains);
+        return phrases.stream().map(String::toLowerCase).anyMatch(response::contains);
     }
 } 
