@@ -9,6 +9,7 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Component;
 
 import javax.sql.DataSource;
+import java.util.List;
 import java.util.Optional;
 
 import static dev.vality.disputes.tg.bot.domain.Tables.PROVIDER_CHAT;
@@ -31,6 +32,11 @@ public class ProviderChatDao extends AbstractGenericDao {
         return Optional.ofNullable(fetchOne(query, providerChatRowMapper));
     }
 
+    public boolean exists(long id) {
+        return getDslContext().fetchCount(PROVIDER_CHAT,
+                PROVIDER_CHAT.READ_FROM_CHAT_ID.eq(id).and(PROVIDER_CHAT.ENABLED)) > 0;
+    }
+
     public Optional<ProviderChat> getByProviderId(int providerId) {
         var query = getDslContext().selectFrom(PROVIDER_CHAT)
                 .where(PROVIDER_CHAT.PROVIDER_ID.eq(providerId)
@@ -38,11 +44,11 @@ public class ProviderChatDao extends AbstractGenericDao {
         return Optional.ofNullable(fetchOne(query, providerChatRowMapper));
     }
 
-    public Optional<ProviderChat> getByReadFromChatId(long chatId) {
+    public List<ProviderChat> getByReadFromChatId(long chatId) {
         var query = getDslContext().selectFrom(PROVIDER_CHAT)
                 .where(PROVIDER_CHAT.READ_FROM_CHAT_ID.eq(chatId)
                         .and(PROVIDER_CHAT.ENABLED));
-        return Optional.ofNullable(fetchOne(query, providerChatRowMapper));
+        return fetch(query, providerChatRowMapper);
     }
 
     public void save(ProviderChat providerChat) {

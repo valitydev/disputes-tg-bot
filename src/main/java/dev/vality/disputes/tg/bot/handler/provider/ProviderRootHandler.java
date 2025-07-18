@@ -30,9 +30,9 @@ public class ProviderRootHandler implements TelegramEventHandler {
         if (chatId == null) {
             return false;
         }
-        Optional<ProviderChat> chat = providerChatDao.get(chatId);
-        log.debug("ProviderRootHandler filtering result: {}", chat.isPresent());
-        return chat.isPresent();
+        var hasChat = providerChatDao.exists(chatId);
+        log.debug("ProviderRootHandler filtering result: {}", hasChat);
+        return hasChat;
     }
 
 
@@ -41,13 +41,10 @@ public class ProviderRootHandler implements TelegramEventHandler {
     @Transactional
     public void handle(Update message) {
         Long chatId = TelegramUtil.getChatId(message);
-        Optional<ProviderChat> chat = providerChatDao.get(chatId);
-        if (chat.isEmpty()) {
-            return;
-        }
+        List<ProviderChat> providerChats = providerChatDao.getByReadFromChatId(chatId);
         var providerMessage = ProviderMessageDto.builder()
-                .providerChat(chat.get())
                 .update(message)
+                .providerChats(providerChats)
                 .build();
 
         handlers.stream()

@@ -6,10 +6,12 @@ import lombok.Getter;
 import lombok.ToString;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
+import java.util.List;
+
 @Getter
 @Builder
 @ToString
 public class ProviderMessageDto {
     private Update update;
-    private ProviderChat providerChat;
+    private List<ProviderChat> providerChats;
 }

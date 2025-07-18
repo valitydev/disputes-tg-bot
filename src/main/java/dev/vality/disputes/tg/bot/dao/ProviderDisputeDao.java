@@ -45,11 +45,19 @@ public class ProviderDisputeDao extends AbstractGenericDao {
         return fetchOne(query, disputeRowMapper);
     }
 
+    public ProviderDispute get(Long replyToMessageId, List<Long> chatIds) {
+        var query = getDslContext().selectFrom(PROVIDER_DISPUTE)
+                .where(PROVIDER_DISPUTE.TG_MESSAGE_ID.eq(replyToMessageId).and(
+                        PROVIDER_DISPUTE.CHAT_ID.in(chatIds)));
+        return fetchOne(query, disputeRowMapper);
+    }
+
     public List<ProviderDispute> get(String invoiceId, String paymentId) {
         var query = getDslContext().selectFrom(PROVIDER_DISPUTE)
                 .where(PROVIDER_DISPUTE.INVOICE_ID.eq(invoiceId).and(
                         PROVIDER_DISPUTE.PAYMENT_ID.eq(paymentId))
-                        .and(PROVIDER_DISPUTE.REASON.isNull()));
+                        .and(PROVIDER_DISPUTE.REASON.isNull()))
+                .orderBy(PROVIDER_DISPUTE.CREATED_AT.desc());
         return fetch(query, disputeRowMapper);
     }
 

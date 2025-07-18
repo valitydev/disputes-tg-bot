@@ -65,7 +65,7 @@ public class ProviderRepliedToDisputeHandler implements ProviderMessageHandler {
         }
         var tgMessage = getMessage(message.getUpdate());
         // Is reply
-        if (!tgMessage.isReply()) {
+        if (tgMessage == null || !tgMessage.isReply()) {
             return false;
         }
 
@@ -123,15 +123,8 @@ public class ProviderRepliedToDisputeHandler implements ProviderMessageHandler {
     }
 
     private ProviderDispute getProviderDispute(ProviderMessageDto message) {
-        Long replyToMessageId = Long.valueOf(message.getUpdate().getMessage().getReplyToMessage().getMessageId());
-        ProviderDispute providerDispute = providerDisputeDao.get(replyToMessageId,
-                message.getProviderChat().getId());
-        if (providerDispute != null) {
-            return providerDispute;
-        }
-
         var disputeInfoOptional =
-                TextParsingUtil.getDisputeInfo(message.getUpdate().getMessage().getReplyToMessage().getCaption());
+                TextParsingUtil.getDisputeInfo(getMessage(message.getUpdate()).getReplyToMessage().getCaption());
         if (disputeInfoOptional.isEmpty()) {
             throw new NotFoundException("Unable to find dispute info");
         }
@@ -148,9 +141,13 @@ public class ProviderRepliedToDisputeHandler implements ProviderMessageHandler {
                                                Integer adminTopicId) {
         String paymentId = FormatUtil.formatPaymentId(providerDispute.getInvoiceId(),
                 providerDispute.getPaymentId());
-        var provider = dominantCacheService.getProvider(new ProviderRef(message.getProviderChat().getProviderId()));
+        var providerId =
+                message.getProviderChats().stream()
+                        .filter(chat -> chat.getId().equals(providerDispute.getChatId()))
+                        .findFirst().get().getProviderId();
+        var provider = dominantCacheService.getProvider(new ProviderRef(providerId));
         String reply = polyglot.getText("dispute.support.response",
-                "(%d) %s".formatted(message.getProviderChat().getProviderId(), provider.getName()),
+                "(%d) %s".formatted(providerId, provider.getName()),
                 paymentId,
                 providerDispute.getProviderTrxId(),
                 extractText(message.getUpdate()));
@@ -193,9 +190,13 @@ public class ProviderRepliedToDisputeHandler implements ProviderMessageHandler {
                                                   ResponsePattern responsePattern) {
         String paymentId = FormatUtil.formatPaymentId(providerDispute.getInvoiceId(),
                 providerDispute.getPaymentId());
-        var provider = dominantCacheService.getProvider(new ProviderRef(message.getProviderChat().getProviderId()));
+        var providerId =
+                message.getProviderChats().stream()
+                        .filter(chat -> chat.getId().equals(providerDispute.getChatId()))
+                        .findFirst().get().getProviderId();
+        var provider = dominantCacheService.getProvider(new ProviderRef(providerId));
         return polyglot.getText("dispute.support.response-pattern-review",
-                "(%d) %s".formatted(message.getProviderChat().getProviderId(), provider.getName()),
+                "(%d) %s".formatted(providerId, provider.getName()),
                 paymentId,
                 providerDispute.getProviderTrxId(),
                 responsePattern.getResponseType().name(),
