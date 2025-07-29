@@ -19,12 +19,10 @@ public class DisputeCreationService {
 
     private final ProviderDisputeDao providerDisputeDao;
 
-    @Transactional
     public UUID createProviderDispute(DisputeParams disputeParams) {
         return createProviderDispute(disputeParams, null);
     }
 
-    @Transactional
     public UUID createProviderDispute(DisputeParams disputeParams, ProviderChat chat) {
         ProviderDispute providerDispute = buildProviderDispute(disputeParams, chat);
         UUID disputeId = providerDisputeDao.save(providerDispute);

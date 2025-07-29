@@ -4,6 +4,7 @@ import dev.vality.damsel.domain.ProviderRef;
 import dev.vality.disputes.provider.*;
 import dev.vality.disputes.tg.bot.config.properties.AdminChatProperties;
 import dev.vality.disputes.tg.bot.dao.ProviderChatDao;
+import dev.vality.disputes.tg.bot.dao.ProviderDisputeDao;
 import dev.vality.disputes.tg.bot.domain.tables.pojos.ProviderChat;
 import dev.vality.disputes.tg.bot.exception.DisputeCreationException;
 import dev.vality.disputes.tg.bot.exception.NotSupportedOperationException;
@@ -26,6 +27,7 @@ public class DisputesHandler implements ProviderDisputesServiceSrv.Iface {
 
     private final HellgateService hellgateService;
     private final ProviderChatDao chatDao;
+    private final ProviderDisputeDao providerDisputeDao;
     private final DisputeCreationService disputeCreationService;
     private final AttachmentService attachmentService;
     private final TelegramNotificationService notificationService;
@@ -40,6 +42,17 @@ public class DisputesHandler implements ProviderDisputesServiceSrv.Iface {
         try {
             log.info("Received createDispute request: {}", disputeParams);
             var trxContext = disputeParams.getTransactionContext();
+            
+            // Check if dispute already exists (idempotency)
+            if (disputeParams.getDisputeId().isPresent()) {
+                var disputeId = UUID.fromString(disputeParams.getDisputeId().get());
+                var existingDispute = providerDisputeDao.get(disputeId);
+                if (existingDispute != null) {
+                    log.info("Dispute already exists with id: {}", disputeId);
+                    return createSuccessResult(existingDispute.getId().toString());
+                }
+            }
+            
             var invoice = hellgateService.getInvoice(trxContext.getInvoiceId());
             var providerRef = InvoiceUtil.getProviderRef(invoice, trxContext.getPaymentId());
             var providerChat = chatDao.getByProviderId(providerRef.getId());

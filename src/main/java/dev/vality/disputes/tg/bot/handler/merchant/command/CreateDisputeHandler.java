@@ -78,7 +78,6 @@ public class CreateDisputeHandler implements MerchantMessageHandler {
         handle(message, createDisputeCommand.getDisputeInfo(), replyLocale);
     }
 
-    @Transactional
     public void handle(MerchantMessageDto message,
                               DisputeInfoDto disputeInfo, Locale replyLocale) {
         var update = message.getUpdate();

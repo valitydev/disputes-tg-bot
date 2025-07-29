@@ -16,6 +16,7 @@ import dev.vality.disputes.tg.bot.util.TelegramUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
 import java.util.List;
@@ -43,6 +44,7 @@ public class CreateDisputeByExternalIdHandler implements MerchantMessageHandler 
     }
 
     @Override
+    @Transactional
     public void handle(MerchantMessageDto message) {
         log.info("Processing create dispute by externalId request");
         Update update = message.getUpdate();
