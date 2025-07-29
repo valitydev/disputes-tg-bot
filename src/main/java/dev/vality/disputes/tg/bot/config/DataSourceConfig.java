@@ -12,6 +12,7 @@ import javax.sql.DataSource;
 @Slf4j
 @Configuration
 @EnableScheduling
+@SuppressWarnings("AbbreviationAsWordInName")
 public class DataSourceConfig {
 
     @Autowired
