@@ -12,7 +12,6 @@
 
     <artifactId>disputes-tg-bot</artifactId>
     <version>1.0.0</version>
-    <name>disputes-tg-bot</name>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -29,7 +28,7 @@
         <db.user>postgres</db.user>
         <db.password>postgres</db.password>
         <db.schema>dspt_tg_bot</db.schema>
-        <testcontainers.annotations.version>3.2.0</testcontainers.annotations.version>
+        <testcontainers.annotations.version>3.1.1</testcontainers.annotations.version>
         <org.telegram.telegrambots.version>9.0.0</org.telegram.telegrambots.version>
     </properties>
 

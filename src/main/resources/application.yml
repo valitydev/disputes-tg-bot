@@ -30,7 +30,7 @@ logging:
 
 spring:
   application:
-    name: ${project.name}
+    name: '@project.name@'
   output:
     ansi:
       enabled: always
@@ -107,3 +107,6 @@ service:
       providers:
         poolSize: 20
         ttlSec: 300
+info:
+  version: '@project.version@'
+  stage: dev
