@@ -37,7 +37,7 @@ import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
 
-import static dev.vality.disputes.tg.bot.config.model.ResponsePattern.ResponseType.APPROVED;
+import static dev.vality.disputes.tg.bot.config.model.ResponsePattern.ResponseType.DECLINED;
 import static dev.vality.disputes.tg.bot.util.TelegramUtil.extractText;
 import static dev.vality.disputes.tg.bot.util.TelegramUtil.getMessage;
 
@@ -115,7 +115,7 @@ public class ProviderRepliedToDisputeHandler implements ProviderMessageHandler {
             case null -> handleUnknownResponse(message, providerDispute);
         }
 
-        if (pattern.getResponseType() != null && !APPROVED.equals(pattern.getResponseType())) {
+        if (pattern.getResponseType() != null && DECLINED.equals(pattern.getResponseType())) {
             var supportMessage = getReviewPatternSupportMessage(message, providerDispute, pattern);
             telegramApiService.sendMessage(supportMessage, adminChatProperties.getId(),
                     adminChatProperties.getTopics().getReviewDisputesPatterns());
