@@ -98,7 +98,7 @@ public class ProviderRepliedToDisputeHandler implements ProviderMessageHandler {
         providerReply.setDisputeId(providerDispute.getId());
         providerReply.setReplyText(replyText);
         providerReply.setRepliedAt(LocalDateTime.ofInstant(
-                Instant.ofEpochSecond(message.getUpdate().getMessage().getDate()), ZoneOffset.UTC));
+                Instant.ofEpochSecond(TelegramUtil.getMessage(message.getUpdate()).getDate()), ZoneOffset.UTC));
         providerReply.setUsername(TelegramUtil.extractUserInfo(message.getUpdate()));
         providerReplyDao.save(providerReply);
 
