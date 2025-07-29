@@ -30,16 +30,18 @@ logging:
 
 spring:
   application:
-    name: '@project.name@'
+    name: ${project.name}
   output:
     ansi:
       enabled: always
   main:
     allow-bean-definition-overriding: true
   datasource:
-    url: jdbc:postgresql://localhost:5432/disputes_tg_bot
-    username: postgres
-    password: postgres
+    type: com.zaxxer.hikari.HikariDataSource
+    driver-class-name: org.postgresql.Driver
+    url: ${db.url}
+    username: ${db.user}
+    password: ${db.password}
   cloud:
     vault:
       kv:
@@ -107,6 +109,3 @@ service:
       providers:
         poolSize: 20
         ttlSec: 300
-info:
-  version: '@project.version@'
-  stage: dev

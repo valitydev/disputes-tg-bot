@@ -62,6 +62,7 @@ public class AddMerchantChatHandler implements AdminMessageHandler {
             telegramApiService.sendReplyTo(replyText, update);
             return;
         }
+        
         var chatInfoOpt = telegramApiService.getChatInfo(addMerchantChatCommand.getChatId());
         if (chatInfoOpt.isEmpty()) {
             log.warn("Chat not found in Telegram: {}", addMerchantChatCommand.getChatId());
@@ -71,6 +72,15 @@ public class AddMerchantChatHandler implements AdminMessageHandler {
         }
         var chatInfo = chatInfoOpt.get();
         log.info("[{}] Got chat from telegram: {}", update.getUpdateId(), chatInfo);
+
+        // Проверяем, что не существует активного чата с таким ID
+        var existingChatOpt = merchantChatDao.get(chatInfo.getId());
+        if (existingChatOpt.isPresent() && existingChatOpt.get().getEnabled()) {
+            log.warn("Merchant chat already exists and is enabled: {}", chatInfo.getId());
+            String replyText = polyglot.getText("error.merchant-chat.already-exists");
+            telegramApiService.sendReplyTo(replyText, update);
+            return;
+        }
 
         MerchantChat merchantChat = new MerchantChat();
         merchantChat.setChatId(chatInfo.getId());
