@@ -33,8 +33,7 @@ public class ProviderChatDao extends AbstractGenericDao {
     }
 
     public boolean exists(long id) {
-        return getDslContext().fetchCount(PROVIDER_CHAT,
-                PROVIDER_CHAT.READ_FROM_CHAT_ID.eq(id).and(PROVIDER_CHAT.ENABLED)) > 0;
+        return !getByReadFromChatId(id).isEmpty();
     }
 
     public Optional<ProviderChat> getByProviderId(int providerId) {
