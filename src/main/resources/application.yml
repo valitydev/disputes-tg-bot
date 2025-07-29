@@ -37,8 +37,6 @@ spring:
   main:
     allow-bean-definition-overriding: true
   datasource:
-    type: com.zaxxer.hikari.HikariDataSource
-    driver-class-name: org.postgresql.Driver
     url: ${db.url}
     username: ${db.user}
     password: ${db.password}
@@ -80,7 +78,7 @@ admin:
       review_disputes_patterns: 8
 
 bot:
-  token: ${botToken}
+  token: "${botToken}"
   name: DisputesBot
 
 service:
