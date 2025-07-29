@@ -75,7 +75,7 @@ public class AddMerchantChatHandler implements AdminMessageHandler {
 
         // Проверяем, что не существует активного чата с таким ID
         var existingChatOpt = merchantChatDao.get(chatInfo.getId());
-        if (existingChatOpt.isPresent() && existingChatOpt.get().getEnabled()) {
+        if (existingChatOpt.isPresent()) {
             log.warn("Merchant chat already exists and is enabled: {}", chatInfo.getId());
             String replyText = polyglot.getText("error.merchant-chat.already-exists");
             telegramApiService.sendReplyTo(replyText, update);

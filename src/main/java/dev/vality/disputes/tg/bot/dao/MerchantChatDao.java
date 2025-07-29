@@ -27,7 +27,7 @@ public class MerchantChatDao extends AbstractGenericDao {
 
     public Optional<MerchantChat> get(long tgChatId) {
         var query = getDslContext().selectFrom(MERCHANT_CHAT)
-                .where(MERCHANT_CHAT.CHAT_ID.eq(tgChatId));
+                .where(MERCHANT_CHAT.CHAT_ID.eq(tgChatId)).and(MERCHANT_CHAT.ENABLED);
         return Optional.ofNullable(fetchOne(query, merchantChatRowMapper));
     }
 
