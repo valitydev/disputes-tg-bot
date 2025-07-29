@@ -78,7 +78,7 @@ admin:
       review_disputes_patterns: 8
 
 bot:
-  token: "${botToken}"
+  token: ${botToken}
   name: DisputesBot
 
 service:
