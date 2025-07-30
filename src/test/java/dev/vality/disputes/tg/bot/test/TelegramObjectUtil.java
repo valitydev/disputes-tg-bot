@@ -11,8 +11,8 @@ import java.util.Random;
 @UtilityClass
 public class TelegramObjectUtil {
 
-    public static final String MERCHANT_CREATE_DISPUTE_COMMAND = "/c 11Testtt1h1";
     public static final String ADD_MERCHANT_CHAT_COMMAND = "/am %d";
+    public static final String DISABLE_MERCHANT_CHAT_COMMAND = "/dm %d";
 
     public static Update buildAddMerchantChatCommand(long chatId) {
         var update = new Update();
@@ -23,11 +23,11 @@ public class TelegramObjectUtil {
         return update;
     }
 
-    public static Update buildMerchantCreateDisputeCommand() {
+    public static Update buildDisableMerchantChatCommand(long chatId) {
         var update = new Update();
         update.setUpdateId(new Random().nextInt());
         var message = buildMessage();
-        message.setCaption(MERCHANT_CREATE_DISPUTE_COMMAND);
+        message.setText(DISABLE_MERCHANT_CHAT_COMMAND.formatted(chatId));
         update.setMessage(message);
         return update;
     }

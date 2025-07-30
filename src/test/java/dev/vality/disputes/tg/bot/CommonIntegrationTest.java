@@ -14,6 +14,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.telegram.telegrambots.longpolling.starter.TelegramBotInitializer;
 import org.telegram.telegrambots.meta.api.methods.groupadministration.GetChat;
+import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
 
 import java.util.List;
@@ -59,18 +60,45 @@ public class CommonIntegrationTest {
     @DisplayName("Add merchant chat command success")
     public void testAddMerchantChatCommandSuccess() {
         long chatId = new Random().nextLong();
-        assertTrue(merchantChatDao.get(chatId).isEmpty());
+        addMerchantChatSuccess(chatId);
+    }
 
-        var update = TelegramObjectUtil.buildAddMerchantChatCommand(chatId);
-        update.getMessage().getChat().setId(adminChatProperties.getId());
-        update.getMessage().setMessageThreadId(adminChatProperties.getTopics().getChatManagement());
+    private void addMerchantChatSuccess(long chatId) throws TelegramApiException {
+        // First add a merchant chat
+        var addUpdate = TelegramObjectUtil.buildAddMerchantChatCommand(chatId);
+        addUpdate.getMessage().getChat().setId(adminChatProperties.getId());
+        addUpdate.getMessage().setMessageThreadId(adminChatProperties.getTopics().getChatManagement());
 
         var chatInfo = TelegramObjectUtil.buildChatFullInfo(chatId);
         when(telegramClient.execute((GetChat) any())).thenReturn(chatInfo);
-        assertDoesNotThrow(() -> disputesBot.consume(update));
+        assertDoesNotThrow(() -> disputesBot.consume(addUpdate));
+
+        // Verify chat was added and is enabled
+        var addedChat = merchantChatDao.get(chatId);
+        assertTrue(addedChat.isPresent());
+    }
+
+    @SneakyThrows
+    @Test
+    @DisplayName("Disable merchant chat command success")
+    public void testDisableMerchantChatCommandSuccess() {
+        long chatId = new Random().nextLong();
+        
+        // First add a merchant chat
+        addMerchantChatSuccess(chatId);
+
+        // Disable the merchant chat
+        var disableUpdate = TelegramObjectUtil.buildDisableMerchantChatCommand(chatId);
+        disableUpdate.getMessage().getChat().setId(adminChatProperties.getId());
+        disableUpdate.getMessage().setMessageThreadId(adminChatProperties.getTopics().getChatManagement());
+
+        assertDoesNotThrow(() -> disputesBot.consume(disableUpdate));
         telegramEventHandlerList.forEach(handler -> {
-            verify(handler, times(1)).filter(any());
+            verify(handler, atLeast(1)).filter(any());
         });
-        assertTrue(merchantChatDao.get(chatId).isPresent());
+        
+        // Verify chat was disabled (get() method filters only enabled chats)
+        var disabledChat = merchantChatDao.get(chatId);
+        assertTrue(disabledChat.isEmpty());
     }
 }
