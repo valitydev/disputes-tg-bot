@@ -4,7 +4,6 @@ import dev.vality.dao.impl.AbstractGenericDao;
 import dev.vality.disputes.tg.bot.domain.tables.pojos.ProviderDispute;
 import dev.vality.mapper.RecordRowMapper;
 import org.springframework.jdbc.core.RowMapper;
-import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.stereotype.Component;
 
 import javax.sql.DataSource;
@@ -70,12 +69,9 @@ public class ProviderDisputeDao extends AbstractGenericDao {
 
     public UUID save(ProviderDispute dispute) {
         var record = getDslContext().newRecord(PROVIDER_DISPUTE, dispute);
-        var query = getDslContext().insertInto(PROVIDER_DISPUTE)
-                .set(record)
-                .returning(PROVIDER_DISPUTE.ID);
-        var keyHolder = new GeneratedKeyHolder();
-        execute(query, keyHolder);
-        return Optional.ofNullable(keyHolder.getKeyAs(UUID.class)).orElseThrow();
+        var query = getDslContext().insertInto(PROVIDER_DISPUTE).set(record);
+        executeOne(query);
+        return dispute.getId();
     }
 
     public void updateReason(String invoiceId, String paymentId, String reason) {

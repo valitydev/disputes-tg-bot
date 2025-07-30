@@ -34,6 +34,8 @@ public class DisputeCreationService {
         ProviderDispute providerDispute = new ProviderDispute();
         if (disputeParams.getDisputeId().isPresent()) {
             providerDispute.setId(UUID.fromString(disputeParams.getDisputeId().get()));
+        } else {
+            providerDispute.setId(UUID.randomUUID());
         }
         providerDispute.setCreatedAt(LocalDateTime.now());
         providerDispute.setInvoiceId(disputeParams.getTransactionContext().getInvoiceId());

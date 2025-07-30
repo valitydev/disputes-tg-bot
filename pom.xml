@@ -28,7 +28,7 @@
         <db.user>postgres</db.user>
         <db.password>postgres</db.password>
         <db.schema>dspt_tg_bot</db.schema>
-        <testcontainers.annotations.version>3.1.1</testcontainers.annotations.version>
+        <testcontainers.annotations.version>3.2.1</testcontainers.annotations.version>
         <org.telegram.telegrambots.version>9.0.0</org.telegram.telegrambots.version>
     </properties>
 

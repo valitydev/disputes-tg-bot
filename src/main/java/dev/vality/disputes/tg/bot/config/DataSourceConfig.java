@@ -18,7 +18,7 @@ public class DataSourceConfig {
     @Autowired
     private DataSource dataSource;
 
-    @Scheduled(fixedRate = 30000) // каждые 30 секунд
+    @Scheduled(fixedRate = 30000)
     public void logConnectionPoolStats() {
         if (dataSource instanceof HikariDataSource hikariDataSource) {
             try {
@@ -28,16 +28,14 @@ public class DataSourceConfig {
                 int idleConnections = poolMXBean.getIdleConnections();
                 int waitingThreads = poolMXBean.getThreadsAwaitingConnection();
                 
-                log.info("HikariCP Pool Stats - Total: {}, Active: {}, Idle: {}, Waiting: {}",
+                log.debug("HikariCP Pool Stats - Total: {}, Active: {}, Idle: {}, Waiting: {}",
                         totalConnections, activeConnections, idleConnections, waitingThreads);
                 
-                // Предупреждение при высоком использовании пула
                 if (activeConnections > totalConnections * 0.8) {
                     log.warn("High connection pool usage detected: {}/{} connections active", 
                             activeConnections, totalConnections);
                 }
                 
-                // Предупреждение при ожидающих потоках
                 if (waitingThreads > 0) {
                     log.warn("Threads waiting for connections: {}", waitingThreads);
                 }
