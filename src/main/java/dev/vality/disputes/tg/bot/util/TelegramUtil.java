@@ -54,14 +54,10 @@ public class TelegramUtil {
     }
 
     private static Integer getMessageThreadId(Update update) {
-        // getIsTopicMessage may return null
-        if (Boolean.TRUE.equals(update.getMessage().getIsTopicMessage())) {
-            return null;
-        }
-        if (update.hasMessage()) {
+        if (update.hasMessage() && Boolean.TRUE.equals(update.getMessage().getIsTopicMessage())) {
             return update.getMessage().getMessageThreadId();
         }
-        if (update.hasChannelPost()) {
+        if (update.hasChannelPost() && Boolean.TRUE.equals(update.getChannelPost().getIsTopicMessage())) {
             return update.getChannelPost().getMessageThreadId();
         }
         return null;
