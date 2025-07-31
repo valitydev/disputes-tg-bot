@@ -13,7 +13,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
 import java.util.List;
-import java.util.Optional;
 
 @Slf4j
 @Component
