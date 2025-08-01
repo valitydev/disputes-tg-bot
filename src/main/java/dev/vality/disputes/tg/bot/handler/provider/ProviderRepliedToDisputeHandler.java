@@ -195,12 +195,14 @@ public class ProviderRepliedToDisputeHandler implements ProviderMessageHandler {
                         .filter(chat -> chat.getId().equals(providerDispute.getChatId()))
                         .findFirst().get().getProviderId();
         var provider = dominantCacheService.getProvider(new ProviderRef(providerId));
+        String textPattern = polyglot.getText(responsePattern.getResponseText());
         return polyglot.getText("dispute.support.response-pattern-review",
                 "(%d) %s".formatted(providerId, provider.getName()),
                 paymentId,
                 providerDispute.getProviderTrxId(),
                 responsePattern.getResponseType().name(),
-                extractText(message.getUpdate()));
+                extractText(message.getUpdate()),
+                textPattern);
     }
 
     private Optional<Message> sendMessageWithAttachmentFromInitial(Message message, String reply, @NotNull Long chatId,
