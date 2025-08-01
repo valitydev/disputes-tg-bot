@@ -9,10 +9,14 @@ import dev.vality.damsel.payment_processing.InvoicePayment;
 import dev.vality.disputes.tg.bot.exception.NotFoundException;
 import lombok.experimental.UtilityClass;
 
+import java.util.Arrays;
 import java.util.Optional;
 
 @UtilityClass
 public class InvoiceUtil {
+
+    private static final String[] targetKeywords = new String[]{"target", "masked"};
+
 
     public static InvoicePayment getInvoicePayment(Invoice invoice, String paymentId) {
         return invoice.getPayments().stream()
@@ -43,6 +47,16 @@ public class InvoiceUtil {
                                 invoice.getInvoice().getId(),
                                 paymentId)))
                 .getRoute();
+    }
+
+    public static String getTarget(Invoice invoice, String paymentId) {
+        var extraEntry = getInvoicePayment(invoice, paymentId).getLastTransactionInfo()
+                .getAdditionalInfo().getExtraPaymentInfo().entrySet().stream()
+                .filter(entry -> {
+                    var key = entry.getKey();
+                    return Arrays.stream(targetKeywords).anyMatch(key::contains);
+                }).findFirst();
+        return extraEntry.map(entry -> "%s: %s".formatted(entry.getKey(), entry.getValue())).orElse(null);
     }
 
     public static TerminalRef getTerminalRef(Invoice invoice, String paymentId) {

@@ -13,5 +13,5 @@ public class DisputeInfoDto {
     private String externalId;
     private String disputeId;
     private String responseText;
-
+    private String extra;
 }

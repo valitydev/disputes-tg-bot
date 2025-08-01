@@ -17,6 +17,7 @@ import dev.vality.disputes.tg.bot.service.TelegramApiService;
 import dev.vality.disputes.tg.bot.service.command.impl.CreateDisputeCommandParser;
 import dev.vality.disputes.tg.bot.service.external.DisputesApiService;
 import dev.vality.disputes.tg.bot.service.external.HellgateService;
+import dev.vality.disputes.tg.bot.util.InvoiceUtil;
 import dev.vality.disputes.tg.bot.util.PolyglotUtil;
 import dev.vality.disputes.tg.bot.util.TelegramUtil;
 import lombok.RequiredArgsConstructor;
@@ -79,7 +80,7 @@ public class CreateDisputeHandler implements MerchantMessageHandler {
     }
 
     public void handle(MerchantMessageDto message,
-                              DisputeInfoDto disputeInfo, Locale replyLocale) {
+                              DisputeInfoDto generalDisputeInfo, Locale replyLocale) {
         var update = message.getUpdate();
         if (!hasAttachment(update)) {
             log.warn("[{}] Attachment missing", update.getUpdateId());
@@ -90,7 +91,7 @@ public class CreateDisputeHandler implements MerchantMessageHandler {
 
         // Enrich payment context with data from hellgate
         try {
-            fillMissingPaymentInfo(disputeInfo);
+            fillMissingPaymentInfo(generalDisputeInfo);
         } catch (InvoiceNotFound e) {
             String reply = polyglot.getText(replyLocale, "error.processing.invoice-not-found");
             telegramApiService.sendReplyTo(reply, update);
@@ -102,7 +103,7 @@ public class CreateDisputeHandler implements MerchantMessageHandler {
         }
 
         // Check if dispute already exists and is not resolved
-        var disputeOptional = merchantDisputeDao.getPendingDisputeByInvoiceIdAndPaymentId(disputeInfo);
+        var disputeOptional = merchantDisputeDao.getPendingDisputeByInvoiceIdAndPaymentId(generalDisputeInfo);
         if (disputeOptional.isPresent()) {
             var dispute = disputeOptional.get();
             log.info("[{}] Dispute has been already created", update.getUpdateId());
@@ -112,8 +113,8 @@ public class CreateDisputeHandler implements MerchantMessageHandler {
         }
 
         DisputeParams disputeParams = new DisputeParams();
-        disputeParams.setInvoiceId(disputeInfo.getInvoiceId());
-        disputeParams.setPaymentId(disputeInfo.getPaymentId());
+        disputeParams.setInvoiceId(generalDisputeInfo.getInvoiceId());
+        disputeParams.setPaymentId(generalDisputeInfo.getPaymentId());
 
         // Download and parse attachments
         try {
@@ -131,10 +132,10 @@ public class CreateDisputeHandler implements MerchantMessageHandler {
             var response = disputesApiService.createDispute(disputeParams);
             log.info("[{}] Dispute has been created: {}", update.getUpdateId(), response);
             if (response.isSetSuccessResult()) {
-                disputeInfo.setDisputeId(response.getSuccessResult().getDisputeId());
-                MerchantDispute dispute = buildDispute(message, disputeInfo);
-                merchantDisputeDao.save(dispute);
-                String reply = buildDisputeCreatedReply(dispute, replyLocale);
+                generalDisputeInfo.setDisputeId(response.getSuccessResult().getDisputeId());
+                MerchantDispute merchantDispute = buildDispute(message, generalDisputeInfo);
+                merchantDisputeDao.save(merchantDispute);
+                String reply = buildDisputeCreatedReply(merchantDispute, generalDisputeInfo, replyLocale);
                 telegramApiService.sendReplyTo(reply, update);
             } else {
                 log.warn("[{}] This point should not be reached, check previous logs", update.getUpdateId());
@@ -175,13 +176,17 @@ public class CreateDisputeHandler implements MerchantMessageHandler {
         telegramApiService.sendReplyTo(replyText, update);
     }
 
-    private String buildDisputeCreatedReply(MerchantDispute dispute, Locale replyLocale) {
+    private String buildDisputeCreatedReply(MerchantDispute dispute, DisputeInfoDto disputeInfoDto,
+                                            Locale replyLocale) {
+        String extra = disputeInfoDto.getExtra() == null ? "" : disputeInfoDto.getExtra();
         return dispute.getExternalId() == null
                 ? polyglot.getText(replyLocale, "dispute.created-wo-external-id",
-                        dispute.getInvoiceId()) :
+                        dispute.getInvoiceId(),
+                extra) :
                 polyglot.getText(replyLocale, "dispute.created",
                         dispute.getInvoiceId(),
-                        dispute.getExternalId());
+                        dispute.getExternalId(),
+                        extra);
     }
 
     private void fillMissingPaymentInfo(DisputeInfoDto disputeInfoDto) throws InvoiceNotFound {
@@ -190,6 +195,11 @@ public class CreateDisputeHandler implements MerchantMessageHandler {
             disputeInfoDto.setPaymentId(invoice.getPayments().getLast().getPayment().getId());
         }
         disputeInfoDto.setExternalId(invoice.getInvoice().getExternalId());
+        try {
+            disputeInfoDto.setExtra(InvoiceUtil.getTarget(invoice, disputeInfoDto.getPaymentId()));
+        } catch (Exception e) {
+            log.warn("Unable to set extra info", e);
+        }
     }
 
     private MerchantDispute buildDispute(MerchantMessageDto message, DisputeInfoDto paymentInfo) {
