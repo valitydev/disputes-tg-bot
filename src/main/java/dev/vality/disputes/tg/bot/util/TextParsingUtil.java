@@ -12,10 +12,12 @@ import java.util.regex.Pattern;
 @UtilityClass
 public class TextParsingUtil {
 
-    public static final String INVOICE_ID_REGEX = "[a-zA-Z0-9]{11}(?:\\.\\d+)?";
-    public static final Pattern INVOICE_ID_REGEX_PATTERN = Pattern.compile(INVOICE_ID_REGEX);
+    public static final String INVOICE_PAYMENT_ID_REGEX = "[a-zA-Z0-9]{11}\\.\\d+";
+    public static final Pattern INVOICE_PAYMENT_ID_REGEX_PATTERN = Pattern.compile(INVOICE_PAYMENT_ID_REGEX);
+    public static final String INVOICE_ID_ONLY_REGEX = "[a-zA-Z0-9]{11}(?!\\.\\d)";
+    public static final Pattern INVOICE_ID_ONLY_REGEX_PATTERN = Pattern.compile(INVOICE_ID_ONLY_REGEX);
 
-    public static final String  INVOICE_ID_AND_BEFORE_INCLUSIVE_REGEX = "^.*[a-zA-Z0-9]{11}(?:\\.\\d+)?";
+    public static final String INVOICE_ID_AND_BEFORE_INCLUSIVE_REGEX = "^.*[a-zA-Z0-9]{11}(?:\\.\\d+)?";
 
     public static final String DISPUTE_ID_REGEX =
             "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}";
@@ -28,25 +30,28 @@ public class TextParsingUtil {
         if (text == null || text.isEmpty()) {
             return Optional.empty();
         }
-        String[] parts = text.split("\\s");
-        DisputeInfoDto.DisputeInfoDtoBuilder disputeInfoBuilder = DisputeInfoDto.builder();
-        for (String part : parts) {
-            if (INVOICE_ID_REGEX_PATTERN.matcher(part).matches()) {
-                String invoiceId = removePaymentId(part);
-                String paymentId = getPaymentId(part);
-                disputeInfoBuilder.invoiceId(invoiceId)
-                        .paymentId(paymentId);
-            }
 
-            if (DISPUTE_ID_REGEX_PATTERN.matcher(part).matches()) {
-                disputeInfoBuilder.disputeId(part);
-            }
+        var builder = DisputeInfoDto.builder();
+        var invoiceMatcher = INVOICE_ID_ONLY_REGEX_PATTERN.matcher(text);
+        if (invoiceMatcher.find()) {
+            String invoiceWithPayment = invoiceMatcher.group();
+            builder.invoiceId(removePaymentId(invoiceWithPayment));
         }
-        DisputeInfoDto disputeInfo = disputeInfoBuilder.build();
-        if (disputeInfo.getInvoiceId() == null && disputeInfo.getDisputeId() == null) {
+        var invoicePaymentMatcher = INVOICE_PAYMENT_ID_REGEX_PATTERN.matcher(text);
+        if (invoicePaymentMatcher.find()) {
+            String invoiceWithPayment = invoicePaymentMatcher.group();
+            builder.invoiceId(removePaymentId(invoiceWithPayment))
+                    .paymentId(getPaymentId(invoiceWithPayment));
+        }
+        var disputeMatcher = DISPUTE_ID_REGEX_PATTERN.matcher(text);
+        if (disputeMatcher.find()) {
+            builder.disputeId(disputeMatcher.group());
+        }
+        var result = builder.build();
+        if (result.getInvoiceId() == null && result.getDisputeId() == null) {
             return Optional.empty();
         }
-        return Optional.of(disputeInfo);
+        return Optional.of(result);
     }
 
     public static List<DisputeInfoDto> getDeclineDisputeInfos(String text) {
@@ -57,26 +62,28 @@ public class TextParsingUtil {
     }
 
     private DisputeInfoDto extractDeclinedDisputeInfo(String line) {
-        String[] parts = line.split("\\s");
-        DisputeInfoDto.DisputeInfoDtoBuilder disputeInfoBuilder = DisputeInfoDto.builder();
-        for (String part : parts) {
-            if (INVOICE_ID_REGEX_PATTERN.matcher(part).matches()) {
-                String invoiceId = removePaymentId(part);
-                String paymentId = getPaymentId(part);
-                disputeInfoBuilder.invoiceId(invoiceId)
-                        .paymentId(paymentId);
-            }
+        var builder = DisputeInfoDto.builder();
+        var invoiceMatcher = INVOICE_ID_ONLY_REGEX_PATTERN.matcher(line);
+        if (invoiceMatcher.find()) {
+            String invoiceWithPayment = invoiceMatcher.group();
+            builder.invoiceId(removePaymentId(invoiceWithPayment));
+        }
+        var invoicePaymentMatcher = INVOICE_PAYMENT_ID_REGEX_PATTERN.matcher(line);
+        if (invoicePaymentMatcher.find()) {
+            String invoiceWithPayment = invoicePaymentMatcher.group();
+            builder.invoiceId(removePaymentId(invoiceWithPayment))
+                    .paymentId(getPaymentId(invoiceWithPayment));
         }
         String errorText = line.replaceFirst(INVOICE_ID_AND_BEFORE_INCLUSIVE_REGEX, "").trim();
-        disputeInfoBuilder.responseText(errorText);
-        return disputeInfoBuilder.build();
+        builder.responseText(errorText);
+        return builder.build();
     }
 
     private List<String> getLinesWithDisputes(String text) {
         return Arrays.stream(text.split("\\n"))
                 .filter(
                         line -> line.matches(".*" + DISPUTE_ID_REGEX_PATTERN + ".*")
-                                || line.matches(".*" + INVOICE_ID_REGEX_PATTERN + ".*"))
+                                || line.matches(".*" + INVOICE_PAYMENT_ID_REGEX_PATTERN + ".*"))
                 .toList();
     }
 
@@ -106,6 +113,6 @@ public class TextParsingUtil {
     }
 
     public static boolean hasInvoiceId(String text) {
-        return INVOICE_ID_REGEX_PATTERN.matcher(text).hasMatch();
+        return INVOICE_PAYMENT_ID_REGEX_PATTERN.matcher(text).hasMatch();
     }
 }
