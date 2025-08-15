@@ -33,6 +33,9 @@ public class DisputesApiNotificationHandler implements AdminCallbackServiceSrv.I
 
     @Override
     public void notify(Dispute dispute) throws TException {
+    }
+
+    public void notifyDisabled(Dispute dispute) throws TException {
         log.info("Processing {} notification", dispute);
         switch (dispute.getStatus()) {
             case "already_exist_created" -> {
