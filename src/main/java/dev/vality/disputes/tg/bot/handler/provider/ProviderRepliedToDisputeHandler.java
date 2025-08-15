@@ -163,7 +163,7 @@ public class ProviderRepliedToDisputeHandler implements ProviderMessageHandler {
         cancelParams.setInvoiceId(providerDispute.getInvoiceId());
         cancelParams.setPaymentId(providerDispute.getPaymentId());
         cancelParams.setMapping(pattern.getResponseText());
-        cancelParams.setCancelReason(replyText);
+        cancelParams.setProviderMessage(replyText);
 
         CancelParamsRequest cancelParamsRequest = new CancelParamsRequest();
         cancelParamsRequest.setCancelParams(List.of(cancelParams));

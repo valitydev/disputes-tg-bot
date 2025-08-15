@@ -20,8 +20,6 @@ import static dev.vality.disputes.tg.bot.util.TelegramUtil.extractText;
 @RequiredArgsConstructor
 public class SendWebhookHandler implements AdminMessageHandler {
 
-
-
     private final AdminManagementServiceSrv.Iface adminManagementClient;
     private final TelegramApiService telegramApiService;
     private final Polyglot polyglot;
