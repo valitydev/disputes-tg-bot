@@ -6,6 +6,7 @@ import dev.vality.disputes.tg.bot.service.TelegramApiService;
 import dev.vality.disputes.tg.bot.util.TelegramUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.tika.Tika;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.objects.Document;
 import org.telegram.telegrambots.meta.api.objects.Update;
@@ -24,15 +25,16 @@ import java.util.Optional;
 public class UpdateToAttachmentConverter {
 
     private static final String DEFAULT_COMPRESSED_PHOTO_MIME_TYPE = "image/jpeg";
+    private static final Tika tika = new Tika();
     private final TelegramApiService telegramApiService;
 
-    public Attachment convert(Update update) throws TelegramApiException,
-            IOException {
+    public Attachment convert(Update update) throws TelegramApiException, IOException {
         String fileId;
         String mimeType;
         var optionalDocument = getDocument(update);
         var optionalPhoto = getPhoto(update);
         var optionalVideo = getVideo(update);
+
         if (optionalDocument.isPresent()) {
             fileId = optionalDocument.get().getFileId();
             mimeType = optionalDocument.get().getMimeType();
@@ -48,8 +50,19 @@ public class UpdateToAttachmentConverter {
             throw new UnexpectedException("Attachment not found");
         }
 
+        byte[] fileData = telegramApiService.getFile(fileId);
+
+        try {
+            var detectedMime = tika.detect(fileData);
+            if (detectedMime != null && !detectedMime.isBlank()) {
+                mimeType = detectedMime;
+            }
+        } catch (Exception e) {
+            log.warn("Unable to detect MIME type via Tika, keeping provided type: {}", mimeType, e);
+        }
+
         Attachment attachment = new Attachment();
-        attachment.setData(telegramApiService.getFile(fileId));
+        attachment.setData(fileData);
         attachment.setMimeType(mimeType);
         return attachment;
     }
@@ -92,6 +105,4 @@ public class UpdateToAttachmentConverter {
         photoSizes.sort(photoSizeComparator);
         return photoSizes.getLast();
     }
-
-
 }
