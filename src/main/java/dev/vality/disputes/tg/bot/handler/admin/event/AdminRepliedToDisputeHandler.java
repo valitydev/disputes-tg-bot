@@ -55,7 +55,6 @@ public class AdminRepliedToDisputeHandler implements AdminMessageHandler {
                 () -> new ConfigurationException("Unreachable point, check application configuration"));
 
         CancelParams cancelParams = new CancelParams();
-        String text = TelegramUtil.extractText(update);
         cancelParams.setInvoiceId(dispute.getInvoiceId());
         cancelParams.setPaymentId(dispute.getPaymentId());
 
@@ -63,6 +62,8 @@ public class AdminRepliedToDisputeHandler implements AdminMessageHandler {
 
         dispute.setIsApproved(false);
         dispute.setRepliedAt(LocalDateTime.now());
+
+        String text = TelegramUtil.extractText(update);
         dispute.setReplyText(text);
         adminDisputeReviewDao.update(dispute);
 
