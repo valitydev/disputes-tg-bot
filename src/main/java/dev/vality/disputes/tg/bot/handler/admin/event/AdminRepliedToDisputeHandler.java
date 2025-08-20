@@ -58,8 +58,6 @@ public class AdminRepliedToDisputeHandler implements AdminMessageHandler {
         String text = TelegramUtil.extractText(update);
         cancelParams.setInvoiceId(dispute.getInvoiceId());
         cancelParams.setPaymentId(dispute.getPaymentId());
-        cancelParams.setProviderMessage(text);
-        cancelParams.setMapping(text);
 
         adminManagementClient.cancelPending(new CancelParamsRequest(List.of(cancelParams)));
 
