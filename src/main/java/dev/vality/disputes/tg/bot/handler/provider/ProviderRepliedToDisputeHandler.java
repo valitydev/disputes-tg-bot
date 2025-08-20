@@ -162,7 +162,9 @@ public class ProviderRepliedToDisputeHandler implements ProviderMessageHandler {
         CancelParams cancelParams = new CancelParams();
         cancelParams.setInvoiceId(providerDispute.getInvoiceId());
         cancelParams.setPaymentId(providerDispute.getPaymentId());
-        cancelParams.setMapping(pattern.getResponseText());
+
+        String textPattern = polyglot.getText(pattern.getResponseText());
+        cancelParams.setMapping(textPattern);
         cancelParams.setProviderMessage(replyText);
 
         CancelParamsRequest cancelParamsRequest = new CancelParamsRequest();
