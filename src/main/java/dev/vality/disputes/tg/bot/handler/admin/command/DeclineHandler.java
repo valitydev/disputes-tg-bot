@@ -76,7 +76,6 @@ public class DeclineHandler implements AdminMessageHandler {
         CancelParams cancelParams = new CancelParams();
         cancelParams.setInvoiceId(disputeInfoDto.getInvoiceId());
         cancelParams.setPaymentId(disputeInfoDto.getPaymentId());
-        cancelParams.setProviderMessage(disputeInfoDto.getResponseText());
         cancelParams.setMapping(disputeInfoDto.getResponseText());
         return cancelParams;
     }

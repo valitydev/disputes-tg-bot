@@ -4,6 +4,7 @@ import dev.vality.disputes.admin.AdminManagementServiceSrv;
 import dev.vality.disputes.admin.CancelParams;
 import dev.vality.disputes.admin.CancelParamsRequest;
 import dev.vality.disputes.tg.bot.dao.AdminDisputeReviewDao;
+import dev.vality.disputes.tg.bot.dao.ProviderReplyDao;
 import dev.vality.disputes.tg.bot.exception.ConfigurationException;
 import dev.vality.disputes.tg.bot.handler.admin.AdminMessageHandler;
 import dev.vality.disputes.tg.bot.service.TelegramApiService;
@@ -24,6 +25,7 @@ import java.util.List;
 public class AdminRepliedToDisputeHandler implements AdminMessageHandler {
 
     private final AdminDisputeReviewDao adminDisputeReviewDao;
+    private final ProviderReplyDao providerReplyDao;
     private final AdminManagementServiceSrv.Iface adminManagementClient;
     private final TelegramApiService telegramApiService;
 
@@ -55,16 +57,16 @@ public class AdminRepliedToDisputeHandler implements AdminMessageHandler {
                 () -> new ConfigurationException("Unreachable point, check application configuration"));
 
         CancelParams cancelParams = new CancelParams();
+        String text = TelegramUtil.extractText(update);
         cancelParams.setInvoiceId(dispute.getInvoiceId());
         cancelParams.setPaymentId(dispute.getPaymentId());
+        cancelParams.setProviderMessage(providerReplyDao.getById(dispute.getProviderReplyId()).getReplyText());
+        cancelParams.setMapping(text);
 
         adminManagementClient.cancelPending(new CancelParamsRequest(List.of(cancelParams)));
 
         dispute.setIsApproved(false);
         dispute.setRepliedAt(LocalDateTime.now());
-
-        String text = TelegramUtil.extractText(update);
-        dispute.setReplyText(text);
         adminDisputeReviewDao.update(dispute);
 
         telegramApiService.setThumbUpReaction(TelegramUtil.getChatId(update), update.getMessage().getMessageId());

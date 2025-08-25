@@ -24,17 +24,18 @@ public class ProviderReplyDao extends AbstractGenericDao {
         providerReplyRowMapper = new RecordRowMapper<>(PROVIDER_REPLY, ProviderReply.class);
     }
 
-    public void save(ProviderReply providerReply) {
+    public Long save(ProviderReply providerReply) {
         var record = getDslContext().newRecord(PROVIDER_REPLY, providerReply);
         var query = getDslContext().insertInto(PROVIDER_REPLY)
-                .set(record);
-        executeOne(query);
+                .set(record)
+                .returning(PROVIDER_REPLY.ID);
+        var result = fetchOne(query, providerReplyRowMapper);
+        return result.getId();
     }
 
-    public List<ProviderReply> getAllReplies(UUID disputeId) {
+    public ProviderReply getById(Long replyId) {
         var query = getDslContext().selectFrom(PROVIDER_REPLY)
-                .where(PROVIDER_REPLY.DISPUTE_ID.eq(disputeId))
-                .orderBy(PROVIDER_REPLY.REPLIED_AT.asc());
-        return fetch(query, providerReplyRowMapper);
+                .where(PROVIDER_REPLY.ID.eq(replyId));
+        return fetchOne(query, providerReplyRowMapper);
     }
 }

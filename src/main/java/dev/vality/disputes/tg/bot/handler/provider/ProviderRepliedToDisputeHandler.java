@@ -100,8 +100,7 @@ public class ProviderRepliedToDisputeHandler implements ProviderMessageHandler {
         providerReply.setRepliedAt(LocalDateTime.ofInstant(
                 Instant.ofEpochSecond(TelegramUtil.getMessage(message.getUpdate()).getDate()), ZoneOffset.UTC));
         providerReply.setUsername(TelegramUtil.extractUserInfo(message.getUpdate()));
-        providerReplyDao.save(providerReply);
-
+        var replyId = providerReplyDao.save(providerReply);
 
         Optional<ResponsePattern> optionalPattern = responseParser.findMatchingPattern(replyText);
         var pattern = optionalPattern.orElse(new ResponsePattern());
@@ -112,7 +111,7 @@ public class ProviderRepliedToDisputeHandler implements ProviderMessageHandler {
             case PENDING -> log.info("Provider reply '{}' matches '{}' type, support won't be notified",
                     replyText, pattern.getResponseType());
             case DECLINED -> handleDeclinedDispute(providerDispute, pattern, replyText);
-            case null -> handleUnknownResponse(message, providerDispute);
+            case null -> handleUnknownResponse(message, providerDispute, replyId);
         }
 
         if (pattern.getResponseType() != null && DECLINED.equals(pattern.getResponseType())) {
@@ -172,7 +171,7 @@ public class ProviderRepliedToDisputeHandler implements ProviderMessageHandler {
         adminManagementClient.cancelPending(cancelParamsRequest);
     }
 
-    private void handleUnknownResponse(ProviderMessageDto message, ProviderDispute providerDispute) {
+    private void handleUnknownResponse(ProviderMessageDto message, ProviderDispute providerDispute, Long replyId) {
         var adminMessage = sendAdminMessage(message, providerDispute,
                 adminChatProperties.getTopics().getReviewDisputesProcessing());
         if (adminMessage.isEmpty()) {
@@ -181,7 +180,7 @@ public class ProviderRepliedToDisputeHandler implements ProviderMessageHandler {
         }
 
         try {
-            adminDisputeReviewDao.save(buildSupportDispute(adminMessage.get(), providerDispute));
+            adminDisputeReviewDao.save(buildSupportDispute(adminMessage.get(), providerDispute, replyId));
         } catch (DaoException e) {
             log.error("Unable to save support dispute", e);
             throw e;
@@ -226,13 +225,15 @@ public class ProviderRepliedToDisputeHandler implements ProviderMessageHandler {
     }
 
     private AdminDisputeReview buildSupportDispute(Message deliveredMessage,
-                                                   ProviderDispute providerDispute) {
+                                                   ProviderDispute providerDispute,
+                                                   Long replyId) {
         AdminDisputeReview supportDispute = new AdminDisputeReview();
         supportDispute.setCreatedAt(LocalDateTime.now());
         supportDispute.setProviderDisputeId(providerDispute.getId());
         supportDispute.setTgMessageId(Long.valueOf(deliveredMessage.getMessageId()));
         supportDispute.setInvoiceId(providerDispute.getInvoiceId());
         supportDispute.setPaymentId(providerDispute.getPaymentId());
+        supportDispute.setProviderReplyId(replyId);
         return supportDispute;
     }
 }
