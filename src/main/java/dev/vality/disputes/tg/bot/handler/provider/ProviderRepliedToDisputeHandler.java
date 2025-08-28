@@ -7,9 +7,7 @@ import dev.vality.disputes.admin.CancelParams;
 import dev.vality.disputes.admin.CancelParamsRequest;
 import dev.vality.disputes.tg.bot.config.model.ResponsePattern;
 import dev.vality.disputes.tg.bot.config.properties.AdminChatProperties;
-import dev.vality.disputes.tg.bot.dao.AdminDisputeReviewDao;
-import dev.vality.disputes.tg.bot.dao.ProviderDisputeDao;
-import dev.vality.disputes.tg.bot.dao.ProviderReplyDao;
+import dev.vality.disputes.tg.bot.dao.*;
 import dev.vality.disputes.tg.bot.domain.tables.pojos.AdminDisputeReview;
 import dev.vality.disputes.tg.bot.domain.tables.pojos.ProviderDispute;
 import dev.vality.disputes.tg.bot.domain.tables.pojos.ProviderReply;
@@ -35,6 +33,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 
 import static dev.vality.disputes.tg.bot.config.model.ResponsePattern.ResponseType.DECLINED;
@@ -50,6 +49,8 @@ public class ProviderRepliedToDisputeHandler implements ProviderMessageHandler {
     private final ProviderReplyDao providerReplyDao;
     private final Polyglot polyglot;
     private final AdminDisputeReviewDao adminDisputeReviewDao;
+    private final MerchantDisputeDao merchantDisputeDao;
+    private final MerchantChatDao merchantChatDao;
     private final AdminChatProperties adminChatProperties;
     private final DominantService dominantCacheService;
     private final ResponseParser responseParser;
@@ -162,13 +163,29 @@ public class ProviderRepliedToDisputeHandler implements ProviderMessageHandler {
         cancelParams.setInvoiceId(providerDispute.getInvoiceId());
         cancelParams.setPaymentId(providerDispute.getPaymentId());
 
-        String textPattern = polyglot.getText(pattern.getResponseText());
+        var locale = getMerchantResponseLocale(providerDispute);
+        String textPattern = polyglot.getText(locale, pattern.getResponseText());
         cancelParams.setMapping(textPattern);
         cancelParams.setProviderMessage(replyText);
 
         CancelParamsRequest cancelParamsRequest = new CancelParamsRequest();
         cancelParamsRequest.setCancelParams(List.of(cancelParams));
         adminManagementClient.cancelPending(cancelParamsRequest);
+    }
+
+    private Locale getMerchantResponseLocale(ProviderDispute providerDispute) {
+        var merchantDispute = merchantDisputeDao.getByDisputeId(providerDispute.getId().toString());
+        if (merchantDispute.isEmpty()) {
+            // Dispute was created via api
+            return polyglot.getLocale();
+        }
+        var chatId = merchantDispute.get().getChatId();
+        var merchantChat = merchantChatDao.getById(chatId);
+        if (merchantChat.isEmpty()) {
+            log.warn("Merchant chat not found! This must be unreachable, check previous logs");
+            return polyglot.getLocale();
+        }
+        return polyglot.getLocale(merchantChat.get().getLocale());
     }
 
     private void handleUnknownResponse(ProviderMessageDto message, ProviderDispute providerDispute, Long replyId) {
