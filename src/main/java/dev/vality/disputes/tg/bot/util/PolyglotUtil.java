@@ -1,5 +1,6 @@
 package dev.vality.disputes.tg.bot.util;
 
+import dev.vality.disputes.tg.bot.domain.enums.DisputeStatus;
 import dev.vality.disputes.tg.bot.domain.tables.pojos.MerchantDispute;
 import dev.vality.disputes.tg.bot.service.Polyglot;
 import lombok.experimental.UtilityClass;
@@ -19,7 +20,7 @@ public class PolyglotUtil {
         return buildStatusMessage(dispute, statusMessage, messageType, replyLocale, polyglot);
     }
 
-    private static String formatStatusMessage(dev.vality.disputes.tg.bot.domain.enums.DisputeStatus status) {
+    private static String formatStatusMessage(DisputeStatus status) {
         return switch (status) {
             case pending -> String.format("%s ⏳", status.getLiteral());
             case approved -> String.format("%s ✅", status.getLiteral());
@@ -28,45 +29,63 @@ public class PolyglotUtil {
     }
 
     private static MessageType determineMessageType(MerchantDispute dispute) {
-        if (dispute.getMessage() == null) {
-            return dispute.getExternalId() == null ? MessageType.STATUS_WO_EXTERNAL_ID : MessageType.STATUS;
+        if (dispute.getMessage() != null && dispute.getChangedAmount() != null && dispute.getExternalId() != null) {
+            return MessageType.STATUS_WITH_AMOUNT_EXTERNAL_ID_MESSAGE;
+        }
+        if (dispute.getMessage() != null && dispute.getChangedAmount() != null && dispute.getExternalId() == null) {
+            return MessageType.STATUS_WITH_AMOUNT_MESSAGE;
+        }
+        if (dispute.getMessage() != null && dispute.getChangedAmount() == null && dispute.getExternalId() != null) {
+            return MessageType.STATUS_WITH_EXTERNAL_ID_MESSAGE;
+        }
+        if (dispute.getMessage() == null && dispute.getChangedAmount() != null && dispute.getExternalId() != null) {
+            return MessageType.STATUS_WITH_AMOUNT_EXTERNAL_ID;
+        }
+        if (dispute.getMessage() != null) {
+            return MessageType.STATUS_WITH_MESSAGE;
         }
         if (dispute.getChangedAmount() != null) {
-            return dispute.getExternalId() == null ? MessageType.STATUS_WITH_AMOUNT_WO_EXTERNAL_ID :
-                    MessageType.STATUS_WITH_AMOUNT;
+            return MessageType.STATUS_WITH_AMOUNT;
         }
-        return dispute.getExternalId() == null ? MessageType.STATUS_WITH_MESSAGE_WO_EXTERNAL_ID :
-                MessageType.STATUS_WITH_MESSAGE;
+        if (dispute.getExternalId() != null) {
+            return MessageType.STATUS_WITH_EXTERNAL_ID;
+        }
+        return MessageType.STATUS;
     }
 
     private static String buildStatusMessage(MerchantDispute dispute, String statusMessage, MessageType messageType, 
                                            Locale replyLocale, Polyglot polyglot) {
         return switch (messageType) {
-            case STATUS_WO_EXTERNAL_ID -> polyglot.getText(replyLocale, "dispute.status-wo-external-id",
-                    dispute.getInvoiceId(), statusMessage);
             case STATUS -> polyglot.getText(replyLocale, "dispute.status",
-                    dispute.getInvoiceId(), dispute.getExternalId(), statusMessage);
-            case STATUS_WITH_AMOUNT_WO_EXTERNAL_ID ->
-                    polyglot.getText(replyLocale, "dispute.status-with-amount-wo-external-id",
-                            dispute.getInvoiceId(), statusMessage, formatAmount(dispute.getChangedAmount()));
-            case STATUS_WITH_AMOUNT -> polyglot.getText(replyLocale, "dispute.status-with-amount",
-                    dispute.getInvoiceId(), dispute.getExternalId(), statusMessage,
-                    formatAmount(dispute.getChangedAmount()));
-            case STATUS_WITH_MESSAGE_WO_EXTERNAL_ID ->
-                    polyglot.getText(replyLocale, "dispute.status-with-message-wo-external-id",
-                            dispute.getInvoiceId(), statusMessage, dispute.getMessage());
-            case STATUS_WITH_MESSAGE -> polyglot.getText(replyLocale, "dispute.status-with-message",
-                    dispute.getInvoiceId(), dispute.getExternalId(), statusMessage, dispute.getMessage());
+                    dispute.getInvoiceId(), statusMessage);
+            case STATUS_WITH_AMOUNT -> polyglot.getText(replyLocale, "dispute.status-amount",
+                    dispute.getInvoiceId(), statusMessage, dispute.getChangedAmount());
+            case STATUS_WITH_EXTERNAL_ID -> polyglot.getText(replyLocale, "dispute.status-ext-id",
+                    dispute.getInvoiceId(), statusMessage, dispute.getExternalId());
+            case STATUS_WITH_MESSAGE -> polyglot.getText(replyLocale, "dispute.status-message",
+                    dispute.getInvoiceId(), statusMessage, dispute.getMessage());
+            case STATUS_WITH_AMOUNT_EXTERNAL_ID -> polyglot.getText(replyLocale, "dispute.status-ext-id-amount",
+                    dispute.getInvoiceId(), statusMessage, dispute.getExternalId(), dispute.getChangedAmount());
+            case STATUS_WITH_AMOUNT_MESSAGE -> polyglot.getText(replyLocale, "dispute.status-amount-message",
+                    dispute.getInvoiceId(), statusMessage, dispute.getChangedAmount(), dispute.getMessage());
+            case STATUS_WITH_EXTERNAL_ID_MESSAGE -> polyglot.getText(replyLocale, "dispute.status-ext-id-message",
+                    dispute.getInvoiceId(), statusMessage, dispute.getExternalId(), dispute.getMessage());
+            case STATUS_WITH_AMOUNT_EXTERNAL_ID_MESSAGE ->
+                    polyglot.getText(replyLocale, "dispute.status-ext-id-amount-message",
+                            dispute.getInvoiceId(), statusMessage, dispute.getExternalId(),
+                            dispute.getChangedAmount(), dispute.getMessage());
         };
     }
 
     private enum MessageType {
-        STATUS_WO_EXTERNAL_ID,
         STATUS,
-        STATUS_WITH_AMOUNT_WO_EXTERNAL_ID,
         STATUS_WITH_AMOUNT,
-        STATUS_WITH_MESSAGE_WO_EXTERNAL_ID,
-        STATUS_WITH_MESSAGE
+        STATUS_WITH_EXTERNAL_ID,
+        STATUS_WITH_MESSAGE,
+        STATUS_WITH_AMOUNT_EXTERNAL_ID,
+        STATUS_WITH_AMOUNT_MESSAGE,
+        STATUS_WITH_EXTERNAL_ID_MESSAGE,
+        STATUS_WITH_AMOUNT_EXTERNAL_ID_MESSAGE
     }
 
     private static String formatAmount(long amount) {

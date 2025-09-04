@@ -2,9 +2,7 @@ package dev.vality.disputes.tg.bot.handler.provider;
 
 import dev.vality.damsel.domain.ProviderRef;
 import dev.vality.dao.DaoException;
-import dev.vality.disputes.admin.AdminManagementServiceSrv;
-import dev.vality.disputes.admin.CancelParams;
-import dev.vality.disputes.admin.CancelParamsRequest;
+import dev.vality.disputes.admin.*;
 import dev.vality.disputes.tg.bot.config.model.ResponsePattern;
 import dev.vality.disputes.tg.bot.config.properties.AdminChatProperties;
 import dev.vality.disputes.tg.bot.dao.*;
@@ -24,6 +22,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.thrift.TException;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.telegram.telegrambots.meta.api.objects.InputFile;
@@ -102,15 +101,19 @@ public class ProviderRepliedToDisputeHandler implements ProviderMessageHandler {
                 Instant.ofEpochSecond(TelegramUtil.getMessage(message.getUpdate()).getDate()), ZoneOffset.UTC));
         providerReply.setUsername(TelegramUtil.extractUserInfo(message.getUpdate()));
         var replyId = providerReplyDao.save(providerReply);
-
         Optional<ResponsePattern> optionalPattern = responseParser.findMatchingPattern(replyText);
         var pattern = optionalPattern.orElse(new ResponsePattern());
-
         switch (pattern.getResponseType()) {
-            case APPROVED -> sendAdminMessage(message, providerDispute,
-                    adminChatProperties.getTopics().getApprovedDisputesProcessing());
-            case PENDING -> log.info("Provider reply '{}' matches '{}' type, support won't be notified",
-                    replyText, pattern.getResponseType());
+            case APPROVED -> {
+                sendAdminMessage(message, providerDispute,
+                        adminChatProperties.getTopics().getApprovedDisputesProcessing());
+                updateProviderMessage(providerDispute, replyText);
+            }
+            case PENDING -> {
+                log.info("Provider reply '{}' matches '{}' type, support won't be notified",
+                        replyText, pattern.getResponseType());
+                updateProviderMessage(providerDispute, replyText);
+            }
             case DECLINED -> handleDeclinedDispute(providerDispute, pattern, replyText);
             case null -> handleUnknownResponse(message, providerDispute, replyId);
         }
@@ -157,6 +160,11 @@ public class ProviderRepliedToDisputeHandler implements ProviderMessageHandler {
         return sendMessageWithAttachmentFromInitial(telegramMessage, reply, adminChatProperties.getId(), adminTopicId);
     }
 
+    private void updateProviderMessage(ProviderDispute providerDispute, String replyText) throws TException {
+        UpdatePendingParamsRequest request = buildUpdatePendingParamsRequest(providerDispute, replyText);
+        adminManagementClient.updatePending(request);
+    }
+
     private void handleDeclinedDispute(ProviderDispute providerDispute, ResponsePattern pattern,
                                        String replyText) throws Exception {
         CancelParams cancelParams = new CancelParams();
@@ -171,21 +179,6 @@ public class ProviderRepliedToDisputeHandler implements ProviderMessageHandler {
         CancelParamsRequest cancelParamsRequest = new CancelParamsRequest();
         cancelParamsRequest.setCancelParams(List.of(cancelParams));
         adminManagementClient.cancelPending(cancelParamsRequest);
-    }
-
-    private Locale getMerchantResponseLocale(ProviderDispute providerDispute) {
-        var merchantDispute = merchantDisputeDao.getByDisputeId(providerDispute.getId().toString());
-        if (merchantDispute.isEmpty()) {
-            // Dispute was created via api
-            return polyglot.getLocale();
-        }
-        var chatId = merchantDispute.get().getChatId();
-        var merchantChat = merchantChatDao.getById(chatId);
-        if (merchantChat.isEmpty()) {
-            log.warn("Merchant chat not found! This must be unreachable, check previous logs");
-            return polyglot.getLocale();
-        }
-        return polyglot.getLocale(merchantChat.get().getLocale());
     }
 
     private void handleUnknownResponse(ProviderMessageDto message, ProviderDispute providerDispute, Long replyId) {
@@ -239,6 +232,32 @@ public class ProviderRepliedToDisputeHandler implements ProviderMessageHandler {
         } else {
             return telegramApiService.sendMessage(reply, adminChatProperties.getId(), adminTopicId);
         }
+    }
+
+    private static UpdatePendingParamsRequest buildUpdatePendingParamsRequest(ProviderDispute providerDispute,
+                                                                              String replyText) {
+        UpdatePendingParams updatePendingParams = new UpdatePendingParams();
+        updatePendingParams.setInvoiceId(providerDispute.getInvoiceId());
+        updatePendingParams.setPaymentId(providerDispute.getPaymentId());
+        updatePendingParams.setProviderMessage(replyText);
+        UpdatePendingParamsRequest request = new UpdatePendingParamsRequest();
+        request.setPendingParams(List.of(updatePendingParams));
+        return request;
+    }
+
+    private Locale getMerchantResponseLocale(ProviderDispute providerDispute) {
+        var merchantDispute = merchantDisputeDao.getByDisputeId(providerDispute.getId().toString());
+        if (merchantDispute.isEmpty()) {
+            // Dispute was created via api
+            return polyglot.getLocale();
+        }
+        var chatId = merchantDispute.get().getChatId();
+        var merchantChat = merchantChatDao.getById(chatId);
+        if (merchantChat.isEmpty()) {
+            log.warn("Merchant chat not found! This must be unreachable, check previous logs");
+            return polyglot.getLocale();
+        }
+        return polyglot.getLocale(merchantChat.get().getLocale());
     }
 
     private AdminDisputeReview buildSupportDispute(Message deliveredMessage,
