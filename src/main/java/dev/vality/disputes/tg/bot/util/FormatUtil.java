@@ -27,4 +27,11 @@ public class FormatUtil {
                 .stripTrailingZeros()
                 .toPlainString();
     }
+
+    public static String getFormattedAmount(Long changedAmount) {
+        return new BigDecimal(changedAmount)
+                .movePointLeft(2)
+                .stripTrailingZeros()
+                .toPlainString();
+    }
 } 
