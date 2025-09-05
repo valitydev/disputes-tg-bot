@@ -211,7 +211,6 @@ public class ProviderRepliedToDisputeHandler implements ProviderMessageHandler {
                 "(%d) %s".formatted(providerId, provider.getName()),
                 paymentId,
                 providerDispute.getProviderTrxId(),
-                responsePattern.getResponseType().name(),
                 extractText(message.getUpdate()),
                 textPattern);
     }
