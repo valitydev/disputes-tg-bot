@@ -61,20 +61,20 @@ public class PolyglotUtil {
             case STATUS_WITH_AMOUNT -> polyglot.getText(replyLocale, "dispute.status-amount",
                     dispute.getInvoiceId(), statusMessage, FormatUtil.getFormattedAmount(dispute.getChangedAmount()));
             case STATUS_WITH_EXTERNAL_ID -> polyglot.getText(replyLocale, "dispute.status-ext-id",
-                    dispute.getInvoiceId(), statusMessage, dispute.getExternalId());
+                    dispute.getInvoiceId(), dispute.getExternalId(), statusMessage);
             case STATUS_WITH_MESSAGE -> polyglot.getText(replyLocale, "dispute.status-message",
                     dispute.getInvoiceId(), statusMessage, dispute.getMessage());
             case STATUS_WITH_AMOUNT_EXTERNAL_ID -> polyglot.getText(replyLocale, "dispute.status-ext-id-amount",
-                    dispute.getInvoiceId(), statusMessage, dispute.getExternalId(),
+                    dispute.getInvoiceId(), dispute.getExternalId(), statusMessage,
                     FormatUtil.getFormattedAmount(dispute.getChangedAmount()));
             case STATUS_WITH_AMOUNT_MESSAGE -> polyglot.getText(replyLocale, "dispute.status-amount-message",
                     dispute.getInvoiceId(), statusMessage, FormatUtil.getFormattedAmount(dispute.getChangedAmount()),
                     dispute.getMessage());
             case STATUS_WITH_EXTERNAL_ID_MESSAGE -> polyglot.getText(replyLocale, "dispute.status-ext-id-message",
-                    dispute.getInvoiceId(), statusMessage, dispute.getExternalId(), dispute.getMessage());
+                    dispute.getInvoiceId(), dispute.getExternalId(), statusMessage, dispute.getMessage());
             case STATUS_WITH_AMOUNT_EXTERNAL_ID_MESSAGE ->
                     polyglot.getText(replyLocale, "dispute.status-ext-id-amount-message",
-                            dispute.getInvoiceId(), statusMessage, dispute.getExternalId(),
+                            dispute.getInvoiceId(), dispute.getExternalId(), statusMessage,
                             FormatUtil.getFormattedAmount(dispute.getChangedAmount()), dispute.getMessage());
         };
     }
