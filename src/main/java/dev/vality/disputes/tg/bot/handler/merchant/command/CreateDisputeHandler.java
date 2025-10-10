@@ -96,7 +96,13 @@ public class CreateDisputeHandler implements MerchantMessageHandler {
             String reply = polyglot.getText(replyLocale, "error.processing.invoice-not-found");
             telegramApiService.sendReplyTo(reply, update);
             return;
+        } catch (PaymentNotStartedException e) {
+            log.error("[{}] PaymentNotStartedException occurred", update.getUpdateId());
+            String reply = polyglot.getText(replyLocale, "error.input.payment-not-started");
+            telegramApiService.sendReplyTo(reply, update);
+            return;
         } catch (Exception e1) {
+            log.error("[{}] Error filling payment info", update.getUpdateId(), e1);
             String reply = polyglot.getText(replyLocale, "error.unknown");
             telegramApiService.sendReplyTo(reply, update);
             return;
@@ -192,6 +198,9 @@ public class CreateDisputeHandler implements MerchantMessageHandler {
     private void fillMissingPaymentInfo(DisputeInfoDto disputeInfoDto) throws InvoiceNotFound {
         Invoice invoice = hellgateService.getInvoice(disputeInfoDto.getInvoiceId());
         if (disputeInfoDto.getPaymentId() == null) {
+            if (invoice.getPayments().isEmpty()) {
+                throw new PaymentNotStartedException();
+            }
             disputeInfoDto.setPaymentId(invoice.getPayments().getLast().getPayment().getId());
         }
         disputeInfoDto.setExternalId(invoice.getInvoice().getExternalId());
