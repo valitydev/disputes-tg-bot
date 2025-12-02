@@ -14,6 +14,7 @@ import org.springframework.validation.annotation.Validated;
 public class DominantCacheProperties {
 
     private CacheConfig providers;
+    private CacheConfig terminals;
 
     @Getter
     @Setter

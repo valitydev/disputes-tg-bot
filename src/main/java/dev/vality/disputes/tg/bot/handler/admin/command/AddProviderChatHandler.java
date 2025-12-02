@@ -65,7 +65,11 @@ public class AddProviderChatHandler implements AdminMessageHandler {
             return;
         }
 
-        if (providerChatDao.getByProviderId(addProviderChatCommand.getProviderId()).isPresent()) {
+        var existingChat = providerChatDao.getByProviderIdAndTerminalId(
+                addProviderChatCommand.getProviderId(),
+                addProviderChatCommand.getTerminalId());
+
+        if (existingChat.isPresent()) {
             log.warn("Provider has another enabled chat");
             String replyText = polyglot.getText(polyglot.getLocale(), "error.input.provider-has-chat");
             telegramApiService.sendReplyTo(replyText, update);

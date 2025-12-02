@@ -19,7 +19,7 @@ public class DisableProviderChatCommandParser implements CommandParser<DisablePr
 
     @Override
     public DisableProviderChatCommand parse(@NonNull String messageText) {
-        if (!CommandValidationUtil.hasExpectedArgsCount(messageText, 1)) {
+        if (!CommandValidationUtil.hasExpectedArgsCount(messageText, 2)) {
             return DisableProviderChatCommand.builder()
                     .validationError(CommandValidationError.ARGUMENT_NUMBER_MISMATCH)
                     .build();
@@ -34,8 +34,20 @@ public class DisableProviderChatCommandParser implements CommandParser<DisablePr
                     .build();
         }
 
+        Integer terminalId = null;
+        if (!CommandValidationUtil.isNull(args[1])) {
+            var terminalIdOpt = CommandValidationUtil.extractInteger(args[1], "Terminal ID");
+            if (terminalIdOpt.isEmpty()) {
+                return DisableProviderChatCommand.builder()
+                        .validationError(CommandValidationError.INVALID_TERMINAL_ID)
+                        .build();
+            }
+            terminalId = terminalIdOpt.get();
+        }
+
         return DisableProviderChatCommand.builder()
                 .providerId(providerId.get())
+                .terminalId(terminalId)
                 .build();
     }
 

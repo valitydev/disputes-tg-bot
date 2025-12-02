@@ -19,7 +19,7 @@ public class AddProviderChatCommandParser implements CommandParser<AddProviderCh
 
     @Override
     public AddProviderChatCommand parse(@NonNull String messageText) {
-        if (!CommandValidationUtil.hasExpectedArgsCount(messageText, 5)) {
+        if (!CommandValidationUtil.hasExpectedArgsCount(messageText, 6)) {
             return AddProviderChatCommand.builder()
                     .validationError(CommandValidationError.ARGUMENT_NUMBER_MISMATCH)
                     .build();
@@ -34,7 +34,18 @@ public class AddProviderChatCommandParser implements CommandParser<AddProviderCh
                     .build();
         }
 
-        var sendToChatId = CommandValidationUtil.extractLong(args[1], "Send to chat ID");
+        Integer terminalId = null;
+        if (!CommandValidationUtil.isNull(args[1])) {
+            var terminalIdOpt = CommandValidationUtil.extractInteger(args[1], "Terminal ID");
+            if (terminalIdOpt.isEmpty()) {
+                return AddProviderChatCommand.builder()
+                        .validationError(CommandValidationError.INVALID_TERMINAL_ID)
+                        .build();
+            }
+            terminalId = terminalIdOpt.get();
+        }
+
+        var sendToChatId = CommandValidationUtil.extractLong(args[2], "Send to chat ID");
         if (sendToChatId.isEmpty()) {
             return AddProviderChatCommand.builder()
                     .validationError(CommandValidationError.INVALID_CHAT_ID)
@@ -42,8 +53,8 @@ public class AddProviderChatCommandParser implements CommandParser<AddProviderCh
         }
 
         Integer sendToTopicId = null;
-        if (!CommandValidationUtil.isNull(args[2])) {
-            var sendToTopicIdOpt = CommandValidationUtil.extractInteger(args[2], "Send to topic ID");
+        if (!CommandValidationUtil.isNull(args[3])) {
+            var sendToTopicIdOpt = CommandValidationUtil.extractInteger(args[3], "Send to topic ID");
             if (sendToTopicIdOpt.isEmpty()) {
                 return AddProviderChatCommand.builder()
                         .validationError(CommandValidationError.INVALID_NUMBER_FORMAT)
@@ -52,21 +63,22 @@ public class AddProviderChatCommandParser implements CommandParser<AddProviderCh
             sendToTopicId = sendToTopicIdOpt.get();
         }
 
-        var readFromChatId = CommandValidationUtil.extractLong(args[3], "Read from chat ID");
+        var readFromChatId = CommandValidationUtil.extractLong(args[4], "Read from chat ID");
         if (readFromChatId.isEmpty()) {
             return AddProviderChatCommand.builder()
                     .validationError(CommandValidationError.INVALID_CHAT_ID)
                     .build();
         }
-        // Extract the remaining string as template (4th argument) from original messageText
+        // Extract the remaining string as template (5th argument) from original messageText
         String template = null;
         String[] parts = messageText.split("\\s+", 6);
-        if (parts.length > 5) {
-            template = CommandValidationUtil.extractNullableString(parts[5]);
+        if (parts.length > 6) {
+            template = CommandValidationUtil.extractNullableString(parts[6]);
         }
 
         return AddProviderChatCommand.builder()
                 .providerId(providerId.get())
+                .terminalId(terminalId)
                 .sendToChatId(sendToChatId.get())
                 .sendToTopicId(sendToTopicId)
                 .readFromChatId(readFromChatId.get())

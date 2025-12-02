@@ -36,9 +36,21 @@ public class ProviderChatDao extends AbstractGenericDao {
         return !getByReadFromChatId(id).isEmpty();
     }
 
-    public Optional<ProviderChat> getByProviderId(int providerId) {
+    public Optional<ProviderChat> getByProviderId(Integer providerId) {
+        return getByProviderIdAndOptionalTerminalId(providerId, null);
+    }
+
+    public Optional<ProviderChat> getByProviderIdAndTerminalId(Integer providerId, Integer terminalId) {
+        return getByProviderIdAndOptionalTerminalId(providerId, terminalId);
+    }
+
+    private Optional<ProviderChat> getByProviderIdAndOptionalTerminalId(Integer providerId, Integer terminalId) {
+        var terminalCondition = terminalId != null
+                ? PROVIDER_CHAT.TERMINAL_ID.eq(terminalId)
+                : PROVIDER_CHAT.TERMINAL_ID.isNull();
         var query = getDslContext().selectFrom(PROVIDER_CHAT)
                 .where(PROVIDER_CHAT.PROVIDER_ID.eq(providerId)
+                        .and(terminalCondition)
                         .and(PROVIDER_CHAT.ENABLED));
         return Optional.ofNullable(fetchOne(query, providerChatRowMapper));
     }
@@ -62,6 +74,19 @@ public class ProviderChatDao extends AbstractGenericDao {
             var set = getDslContext().update(PROVIDER_CHAT)
                     .set(PROVIDER_CHAT.ENABLED, false)
                     .where(PROVIDER_CHAT.PROVIDER_ID.eq(providerId).and(PROVIDER_CHAT.ENABLED));
+            executeOne(set);
+        } catch (JdbcUpdateAffectedIncorrectNumberOfRowsException e1) {
+            log.warn("Unable to disable provider chat. Expected 1 row, got {}", e1.getActualRowsAffected());
+        }
+    }
+
+    public void disable(Integer providerId, Integer terminalId) {
+        try {
+            var set = getDslContext().update(PROVIDER_CHAT)
+                    .set(PROVIDER_CHAT.ENABLED, false)
+                    .where(PROVIDER_CHAT.PROVIDER_ID.eq(providerId)
+                            .and(PROVIDER_CHAT.TERMINAL_ID.eq(terminalId))
+                            .and(PROVIDER_CHAT.ENABLED));
             executeOne(set);
         } catch (JdbcUpdateAffectedIncorrectNumberOfRowsException e1) {
             log.warn("Unable to disable provider chat. Expected 1 row, got {}", e1.getActualRowsAffected());
