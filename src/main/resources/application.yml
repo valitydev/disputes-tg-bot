@@ -107,6 +107,9 @@ service:
       providers:
         poolSize: 20
         ttlSec: 300
+      terminals:
+        poolSize: 20
+        ttlSec: 300
 info:
   version: '@project.version@'
   stage: dev

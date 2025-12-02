@@ -15,6 +15,8 @@ public enum CommandValidationError {
 
     INVALID_PROVIDER_ID("error.input.invalid-provider-id"),
 
+    INVALID_TERMINAL_ID("error.input.invalid-terminal-id"),
+
     INVALID_EXTERNAL_ID("error.input.invalid-external-id"),
 
     INVALID_NUMBER_FORMAT("error.input.invalid-number-format"),

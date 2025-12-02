@@ -8,6 +8,7 @@ import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.cache.caffeine.CaffeineCacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -20,10 +21,19 @@ public class DominantCacheConfig {
     private final DominantCacheProperties dominantCacheProperties;
 
     @Bean
+    @Primary
     public CacheManager providersCacheManager() {
         var caffeineCacheManager = new CaffeineCacheManager();
         caffeineCacheManager.setCaffeine(getCacheConfig(dominantCacheProperties.getProviders()));
         caffeineCacheManager.setCacheNames(List.of("providers"));
+        return caffeineCacheManager;
+    }
+
+    @Bean
+    public CacheManager terminalsCacheManager() {
+        var caffeineCacheManager = new CaffeineCacheManager();
+        caffeineCacheManager.setCaffeine(getCacheConfig(dominantCacheProperties.getTerminals()));
+        caffeineCacheManager.setCacheNames(List.of("terminals"));
         return caffeineCacheManager;
     }
 

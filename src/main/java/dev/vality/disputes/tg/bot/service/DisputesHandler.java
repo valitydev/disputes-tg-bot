@@ -1,6 +1,6 @@
 package dev.vality.disputes.tg.bot.service;
 
-import dev.vality.damsel.domain.ProviderRef;
+import dev.vality.damsel.domain.PaymentRoute;
 import dev.vality.disputes.provider.*;
 import dev.vality.disputes.tg.bot.config.properties.AdminChatProperties;
 import dev.vality.disputes.tg.bot.dao.ProviderChatDao;
@@ -54,24 +54,28 @@ public class DisputesHandler implements ProviderDisputesServiceSrv.Iface {
             }
             
             var invoice = hellgateService.getInvoice(trxContext.getInvoiceId());
-            var providerRef = InvoiceUtil.getProviderRef(invoice, trxContext.getPaymentId());
-            var providerChat = chatDao.getByProviderId(providerRef.getId());
+            var route = InvoiceUtil.getRoute(invoice, trxContext.getPaymentId());
+            var providerChat = chatDao.getByProviderIdAndTerminalId(route.getProvider().getId(),
+                    route.getTerminal().getId())
+                    .or(() -> chatDao.getByProviderId(route.getProvider().getId()));
             return providerChat.map(chat -> createDisputeWithProviderChat(disputeParams, chat))
-                    .orElseGet(() -> createDisputeWithoutProviderChat(disputeParams, providerRef));
+                    .orElseGet(() -> createDisputeWithoutProviderChat(disputeParams, route));
         } catch (Exception e) {
             throw new DisputeCreationException("Unable to create dispute, check stacktrace and previous logs", e);
         }
     }
 
     private DisputeCreatedResult createDisputeWithoutProviderChat(DisputeParams disputeParams,
-                                                                 ProviderRef providerRef) {
+                                                                 PaymentRoute paymentRoute) {
         UUID disputeId = disputeCreationService.createProviderDispute(disputeParams);
         InputFile file = attachmentService.prepareAttachment(disputeId, disputeParams);
         log.info("Provider chat not found for dispute: {}", disputeId);
-        var provider = dominantCacheService.getProvider(providerRef);
+        var provider = dominantCacheService.getProvider(paymentRoute.getProvider());
+        var terminal = dominantCacheService.getTerminal(paymentRoute.getTerminal());
         var trxContext = disputeParams.getTransactionContext();
         String text = polyglot.getText("dispute.provider.created-wo-chat",
-                providerRef.getId(), provider.getName(),
+                paymentRoute.getProvider().getId(), provider.getName(),
+                paymentRoute.getTerminal().getId(), terminal.getName(),
                 trxContext.getProviderTrxId(),
                 trxContext.getInvoiceId() + "." + trxContext.getPaymentId(),
                 disputeParams.getDisputeId().orElseThrow());

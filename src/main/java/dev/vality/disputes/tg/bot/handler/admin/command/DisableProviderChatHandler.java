@@ -63,8 +63,7 @@ public class DisableProviderChatHandler implements AdminMessageHandler {
             telegramApiService.sendReplyTo(replyText, update);
             return;
         }
-
-        providerChatDao.disable(disableProviderChatCommand.getProviderId());
+        providerChatDao.disable(disableProviderChatCommand.getProviderId(), disableProviderChatCommand.getTerminalId());
         log.info("[{}] Provider chat binding disabled {}",
                 update.getUpdateId(), TelegramUtil.extractUserInfo(update));
         telegramApiService.setThumbUpReaction(update.getMessage().getChatId(), update.getMessage().getMessageId());

@@ -11,6 +11,8 @@ import org.springframework.lang.Nullable;
 public class AddProviderChatCommand extends BaseCommand {
 
     private final Integer providerId;
+    @Nullable
+    private final Integer terminalId;
     private final Long sendToChatId;
     @Nullable
     private final Integer sendToTopicId;

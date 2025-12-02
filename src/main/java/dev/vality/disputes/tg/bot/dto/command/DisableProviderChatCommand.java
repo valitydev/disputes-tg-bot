@@ -10,4 +10,5 @@ import lombok.experimental.SuperBuilder;
 public class DisableProviderChatCommand extends BaseCommand {
 
     private final Integer providerId;
+    private final Integer terminalId;
 } 
