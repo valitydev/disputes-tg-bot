@@ -37,14 +37,10 @@ public class ProviderChatDao extends AbstractGenericDao {
     }
 
     public Optional<ProviderChat> getByProviderId(Integer providerId) {
-        return getByProviderIdAndOptionalTerminalId(providerId, null);
+        return getByProviderIdAndTerminalId(providerId, null);
     }
 
     public Optional<ProviderChat> getByProviderIdAndTerminalId(Integer providerId, Integer terminalId) {
-        return getByProviderIdAndOptionalTerminalId(providerId, terminalId);
-    }
-
-    private Optional<ProviderChat> getByProviderIdAndOptionalTerminalId(Integer providerId, Integer terminalId) {
         var terminalCondition = terminalId != null
                 ? PROVIDER_CHAT.TERMINAL_ID.eq(terminalId)
                 : PROVIDER_CHAT.TERMINAL_ID.isNull();
