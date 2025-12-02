@@ -65,10 +65,6 @@ public class ProviderChatDao extends AbstractGenericDao {
         executeOne(query);
     }
 
-    public void disable(Integer providerId) {
-        disable(providerId, null);
-    }
-
     public void disable(Integer providerId, Integer terminalId) {
         try {
             var terminalCondition = terminalId != null
