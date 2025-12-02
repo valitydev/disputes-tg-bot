@@ -70,22 +70,18 @@ public class ProviderChatDao extends AbstractGenericDao {
     }
 
     public void disable(Integer providerId) {
-        try {
-            var set = getDslContext().update(PROVIDER_CHAT)
-                    .set(PROVIDER_CHAT.ENABLED, false)
-                    .where(PROVIDER_CHAT.PROVIDER_ID.eq(providerId).and(PROVIDER_CHAT.ENABLED));
-            executeOne(set);
-        } catch (JdbcUpdateAffectedIncorrectNumberOfRowsException e1) {
-            log.warn("Unable to disable provider chat. Expected 1 row, got {}", e1.getActualRowsAffected());
-        }
+        disable(providerId, null);
     }
 
     public void disable(Integer providerId, Integer terminalId) {
         try {
+            var terminalCondition = terminalId != null
+                    ? PROVIDER_CHAT.TERMINAL_ID.eq(terminalId)
+                    : PROVIDER_CHAT.TERMINAL_ID.isNull();
             var set = getDslContext().update(PROVIDER_CHAT)
                     .set(PROVIDER_CHAT.ENABLED, false)
                     .where(PROVIDER_CHAT.PROVIDER_ID.eq(providerId)
-                            .and(PROVIDER_CHAT.TERMINAL_ID.eq(terminalId))
+                            .and(terminalCondition)
                             .and(PROVIDER_CHAT.ENABLED));
             executeOne(set);
         } catch (JdbcUpdateAffectedIncorrectNumberOfRowsException e1) {
