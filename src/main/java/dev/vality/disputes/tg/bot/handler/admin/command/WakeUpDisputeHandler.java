@@ -63,7 +63,7 @@ public class WakeUpDisputeHandler implements AdminMessageHandler {
         request.addToSetPendingForPoolingExpiredParams(
                 new SetPendingForPoolingExpiredParams(disputeInfo.getInvoiceId(), disputeInfo.getPaymentId()));
         adminManagementClient.setPendingForPoolingExpired(request);
-        log.info("[{}] Check dispute command processed successfully for disputeInfo: {} from {}",
+        log.info("[{}] Wake up dispute command processed successfully for disputeInfo: {} from {}",
                 update.getUpdateId(), wakeUpDisputeCommand.getDisputeInfo(), TelegramUtil.extractUserInfo(update));
         telegramApiService.setThumbUpReaction(update.getMessage().getChatId(), update.getMessage().getMessageId());
     }
