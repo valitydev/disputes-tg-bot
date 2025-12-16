@@ -1,0 +1,115 @@
+server:
+  port: ${server.port}
+management:
+  server:
+    port: ${management.port}
+  metrics:
+    tags:
+      application: ${project.name}
+  endpoint:
+    health:
+      show-details: always
+    metrics:
+      access: unrestricted
+    prometheus:
+      access: unrestricted
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  prometheus:
+    metrics:
+      export:
+        enabled: true
+
+logging:
+  level:
+    '[org.jooq.Constants]': OFF
+    '[dev.vality.disputes.tg.bot]': DEBUG
+    '[dev.vality.disputes.tg.bot.common.service.DisputesBot]': DEBUG
+
+spring:
+  application:
+    name: ${project.name}
+  output:
+    ansi:
+      enabled: always
+  main:
+    allow-bean-definition-overriding: true
+  datasource:
+    url: ${db.url}
+    username: ${db.user}
+    password: ${db.password}
+  cloud:
+    vault:
+      kv:
+        enabled: true
+      uri: https://vault.vality.dev:443
+      authentication: TOKEN
+      scheme: http
+      token: "123456"
+
+dispute:
+  isScheduleEnabled: false
+  batchSize: 1
+  fixedDelayStatus: 900000
+  initialDelayStatus: 60000
+provider:
+  dictionary:
+    file: classpath:filter/provider/response_filter.json
+
+admin:
+  chat:
+    id: 1
+    topics:
+      # Информация от бота (куда был добавлен, откуда удалён)
+      service_info: 2
+      # Ответы от провайдеров на ревью
+      review_disputes_processing: 3
+      # Приходят запросы на диспут для форварда провайдеру
+      unknown_provider: 4
+      # Обработка диспутов пачками
+      batch_disputes_processing: 5
+      # Уведомления об успешных диспутах
+      approved_disputes_processing: 6
+      # Обработка команд с добавлением\отключением чатов
+      chat_management: 7
+      # Диспуты, которые подошли под паттерн
+      review_disputes_patterns: 8
+
+bot:
+  token: ${botToken}
+  name: DisputesBot
+
+service:
+  invoicing:
+    url: http://localhost:8022/change_it
+    networkTimeout: 5000
+  disputes-api-admin-management:
+    url: http://localhost:8022/change_it
+    networkTimeout: 5000
+  disputes-api-admin-callback:
+    url: http://localhost:8022/change_it
+    networkTimeout: 5000
+  disputes-api-merchant:
+    url: http://localhost:8022/change_it
+    networkTimeout: 5000
+  provider-payments-management:
+    url: http://localhost:8022/change_it
+
+  bender:
+    url: http://localhost:8022/change_it
+    networkTimeout: 5000
+  dominant:
+    url: http://localhost:8022/change_it
+    networkTimeout: 5000
+    cache:
+      providers:
+        poolSize: 20
+        ttlSec: 300
+      terminals:
+        poolSize: 20
+        ttlSec: 300
+info:
+  version: '@project.version@'
+  stage: dev

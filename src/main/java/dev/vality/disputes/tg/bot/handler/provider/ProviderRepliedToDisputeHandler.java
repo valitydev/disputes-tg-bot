@@ -1,0 +1,274 @@
+package dev.vality.disputes.tg.bot.handler.provider;
+
+import dev.vality.damsel.domain.ProviderRef;
+import dev.vality.dao.DaoException;
+import dev.vality.disputes.admin.*;
+import dev.vality.disputes.tg.bot.config.model.ResponsePattern;
+import dev.vality.disputes.tg.bot.config.properties.AdminChatProperties;
+import dev.vality.disputes.tg.bot.dao.*;
+import dev.vality.disputes.tg.bot.domain.tables.pojos.AdminDisputeReview;
+import dev.vality.disputes.tg.bot.domain.tables.pojos.ProviderDispute;
+import dev.vality.disputes.tg.bot.domain.tables.pojos.ProviderReply;
+import dev.vality.disputes.tg.bot.dto.ProviderMessageDto;
+import dev.vality.disputes.tg.bot.exception.NotFoundException;
+import dev.vality.disputes.tg.bot.service.Polyglot;
+import dev.vality.disputes.tg.bot.service.ResponseParser;
+import dev.vality.disputes.tg.bot.service.TelegramApiService;
+import dev.vality.disputes.tg.bot.service.external.DominantService;
+import dev.vality.disputes.tg.bot.util.FormatUtil;
+import dev.vality.disputes.tg.bot.util.TelegramUtil;
+import dev.vality.disputes.tg.bot.util.TextParsingUtil;
+import jakarta.validation.constraints.NotNull;
+import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.thrift.TException;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+import org.telegram.telegrambots.meta.api.objects.InputFile;
+import org.telegram.telegrambots.meta.api.objects.message.Message;
+
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.util.List;
+import java.util.Locale;
+import java.util.Optional;
+
+import static dev.vality.disputes.tg.bot.config.model.ResponsePattern.ResponseType.DECLINED;
+import static dev.vality.disputes.tg.bot.util.TelegramUtil.extractText;
+import static dev.vality.disputes.tg.bot.util.TelegramUtil.getMessage;
+
+@Slf4j
+@Component
+@RequiredArgsConstructor
+public class ProviderRepliedToDisputeHandler implements ProviderMessageHandler {
+
+    private final ProviderDisputeDao providerDisputeDao;
+    private final ProviderReplyDao providerReplyDao;
+    private final Polyglot polyglot;
+    private final AdminDisputeReviewDao adminDisputeReviewDao;
+    private final MerchantDisputeDao merchantDisputeDao;
+    private final MerchantChatDao merchantChatDao;
+    private final AdminChatProperties adminChatProperties;
+    private final DominantService dominantCacheService;
+    private final ResponseParser responseParser;
+    private final TelegramApiService telegramApiService;
+    private final AdminManagementServiceSrv.Iface adminManagementClient;
+
+    @Override
+    public boolean filter(ProviderMessageDto message) {
+        // Message contains text
+        String text = extractText(message.getUpdate());
+        if (text == null) {
+            return false;
+        }
+        var tgMessage = getMessage(message.getUpdate());
+        // Is reply
+        if (tgMessage == null || !tgMessage.isReply()) {
+            return false;
+        }
+
+        // Is most likely reply to a dispute message, because it has attachment and payment/dispute ids
+        boolean originMessageHasAttachment = TelegramUtil.hasAttachment(tgMessage.getReplyToMessage());
+        if (!originMessageHasAttachment) {
+            log.debug("Origin message has no attachment, handler won't be applied");
+            return false;
+        }
+
+        var originDisputeInfo =
+                TextParsingUtil.getDisputeInfo(tgMessage.getReplyToMessage().getCaption());
+        if (originDisputeInfo.isEmpty()) {
+            log.debug("Origin message has no dispute info, handler won't be applied");
+            return false;
+        }
+        var disputes = providerDisputeDao.get(originDisputeInfo.get().getInvoiceId(),
+                originDisputeInfo.get().getPaymentId());
+        log.debug("Found {} applicable disputes for dispute info: {}", disputes.size(), originDisputeInfo.get());
+        return !disputes.isEmpty();
+    }
+
+    @Override
+    @SneakyThrows
+    @Transactional
+    public void handle(ProviderMessageDto message) {
+        String replyText = TelegramUtil.extractText(message.getUpdate());
+        var providerDispute = getProviderDispute(message);
+        ProviderReply providerReply = new ProviderReply();
+        providerReply.setDisputeId(providerDispute.getId());
+        providerReply.setReplyText(replyText);
+        providerReply.setRepliedAt(LocalDateTime.ofInstant(
+                Instant.ofEpochSecond(TelegramUtil.getMessage(message.getUpdate()).getDate()), ZoneOffset.UTC));
+        providerReply.setUsername(TelegramUtil.extractUserInfo(message.getUpdate()));
+        var replyId = providerReplyDao.save(providerReply);
+        Optional<ResponsePattern> optionalPattern = responseParser.findMatchingPattern(replyText);
+        var pattern = optionalPattern.orElse(new ResponsePattern());
+        switch (pattern.getResponseType()) {
+            case APPROVED -> {
+                sendAdminMessage(message, providerDispute,
+                        adminChatProperties.getTopics().getApprovedDisputesProcessing());
+                updateProviderMessage(providerDispute, replyText);
+            }
+            case PENDING -> {
+                log.info("Provider reply '{}' matches '{}' type, support won't be notified",
+                        replyText, pattern.getResponseType());
+                updateProviderMessage(providerDispute, replyText);
+            }
+            case DECLINED -> handleDeclinedDispute(providerDispute, pattern, replyText);
+            case null -> handleUnknownResponse(message, providerDispute, replyId);
+        }
+
+        if (pattern.getResponseType() != null && DECLINED.equals(pattern.getResponseType())) {
+            var supportMessage = getReviewPatternSupportMessage(message, providerDispute, pattern);
+            telegramApiService.sendMessage(supportMessage, adminChatProperties.getId(),
+                    adminChatProperties.getTopics().getReviewDisputesPatterns());
+        }
+    }
+
+    private ProviderDispute getProviderDispute(ProviderMessageDto message) {
+        var disputeInfoOptional =
+                TextParsingUtil.getDisputeInfo(getMessage(message.getUpdate()).getReplyToMessage().getCaption());
+        if (disputeInfoOptional.isEmpty()) {
+            throw new NotFoundException("Unable to find dispute info");
+        }
+        var disputeInfo = disputeInfoOptional.get();
+        var disputes = providerDisputeDao.get(disputeInfo.getInvoiceId(), disputeInfo.getPaymentId());
+        if (disputes == null || disputes.isEmpty()) {
+            throw new NotFoundException("Unable to find dispute info");
+        }
+        log.warn("Found {} provider disputes, but will return only first one", disputes.size());
+        return disputes.getFirst();
+    }
+
+    private Optional<Message> sendAdminMessage(ProviderMessageDto message, ProviderDispute providerDispute,
+                                               Integer adminTopicId) {
+        String paymentId = FormatUtil.formatPaymentId(providerDispute.getInvoiceId(),
+                providerDispute.getPaymentId());
+        var providerId =
+                message.getProviderChats().stream()
+                        .filter(chat -> chat.getId().equals(providerDispute.getChatId()))
+                        .findFirst().get().getProviderId();
+        var provider = dominantCacheService.getProvider(new ProviderRef(providerId));
+        String reply = polyglot.getText("dispute.support.response",
+                "(%d) %s".formatted(providerId, provider.getName()),
+                paymentId,
+                providerDispute.getProviderTrxId(),
+                extractText(message.getUpdate()));
+
+        // Проверяем наличие вложения в сообщении
+        var telegramMessage = TelegramUtil.getMessage(message.getUpdate());
+        return sendMessageWithAttachmentFromInitial(telegramMessage, reply, adminChatProperties.getId(), adminTopicId);
+    }
+
+    private void updateProviderMessage(ProviderDispute providerDispute, String replyText) throws TException {
+        UpdatePendingParamsRequest request = buildUpdatePendingParamsRequest(providerDispute, replyText);
+        adminManagementClient.updatePending(request);
+    }
+
+    private void handleDeclinedDispute(ProviderDispute providerDispute, ResponsePattern pattern,
+                                       String replyText) throws Exception {
+        CancelParams cancelParams = new CancelParams();
+        cancelParams.setInvoiceId(providerDispute.getInvoiceId());
+        cancelParams.setPaymentId(providerDispute.getPaymentId());
+
+        var locale = getMerchantResponseLocale(providerDispute);
+        String textPattern = polyglot.getText(locale, pattern.getResponseText());
+        cancelParams.setMapping(textPattern);
+        cancelParams.setProviderMessage(replyText);
+
+        CancelParamsRequest cancelParamsRequest = new CancelParamsRequest();
+        cancelParamsRequest.setCancelParams(List.of(cancelParams));
+        adminManagementClient.cancelPending(cancelParamsRequest);
+    }
+
+    private void handleUnknownResponse(ProviderMessageDto message, ProviderDispute providerDispute, Long replyId) {
+        var adminMessage = sendAdminMessage(message, providerDispute,
+                adminChatProperties.getTopics().getReviewDisputesProcessing());
+        if (adminMessage.isEmpty()) {
+            log.error("Unable to send info to admin chat. Check previous logs.");
+            return;
+        }
+
+        try {
+            adminDisputeReviewDao.save(buildSupportDispute(adminMessage.get(), providerDispute, replyId));
+        } catch (DaoException e) {
+            log.error("Unable to save support dispute", e);
+            throw e;
+        }
+    }
+
+    private String getReviewPatternSupportMessage(ProviderMessageDto message, ProviderDispute providerDispute,
+                                                  ResponsePattern responsePattern) {
+        String paymentId = FormatUtil.formatPaymentId(providerDispute.getInvoiceId(),
+                providerDispute.getPaymentId());
+        var providerId =
+                message.getProviderChats().stream()
+                        .filter(chat -> chat.getId().equals(providerDispute.getChatId()))
+                        .findFirst().get().getProviderId();
+        var provider = dominantCacheService.getProvider(new ProviderRef(providerId));
+        String textPattern = polyglot.getText(responsePattern.getResponseText());
+        return polyglot.getText("dispute.support.response-pattern-review",
+                "(%d) %s".formatted(providerId, provider.getName()),
+                paymentId,
+                providerDispute.getProviderTrxId(),
+                extractText(message.getUpdate()),
+                textPattern);
+    }
+
+    private Optional<Message> sendMessageWithAttachmentFromInitial(Message message, String reply, @NotNull Long chatId,
+                                                                   Integer adminTopicId) {
+        if (message.hasPhoto() && message.getPhoto() != null && !message.getPhoto().isEmpty()) {
+            // Для фото берем последнее (самое большое) фото
+            var photo = message.getPhoto().getLast();
+            InputFile inputFile = new InputFile(photo.getFileId());
+            return telegramApiService.sendMessageWithPhoto(reply, chatId, adminTopicId, inputFile);
+        } else if (message.hasDocument() && message.getDocument() != null) {
+            InputFile inputFile = new InputFile(message.getDocument().getFileId());
+            return telegramApiService.sendMessageWithDocument(reply, chatId, adminTopicId, inputFile);
+        } else if (message.hasVideo() && message.getVideo() != null) {
+            InputFile inputFile = new InputFile(message.getVideo().getFileId());
+            return telegramApiService.sendMessageWithVideo(reply, chatId, adminTopicId, inputFile);
+        } else {
+            return telegramApiService.sendMessage(reply, adminChatProperties.getId(), adminTopicId);
+        }
+    }
+
+    private static UpdatePendingParamsRequest buildUpdatePendingParamsRequest(ProviderDispute providerDispute,
+                                                                              String replyText) {
+        UpdatePendingParams updatePendingParams = new UpdatePendingParams();
+        updatePendingParams.setInvoiceId(providerDispute.getInvoiceId());
+        updatePendingParams.setPaymentId(providerDispute.getPaymentId());
+        updatePendingParams.setProviderMessage(replyText);
+        UpdatePendingParamsRequest request = new UpdatePendingParamsRequest();
+        request.setPendingParams(List.of(updatePendingParams));
+        return request;
+    }
+
+    private Locale getMerchantResponseLocale(ProviderDispute providerDispute) {
+        var merchantDispute = merchantDisputeDao.getByDisputeId(providerDispute.getId().toString());
+        if (merchantDispute.isEmpty()) {
+            // Dispute was created via api
+            return polyglot.getLocale();
+        }
+        var chatId = merchantDispute.get().getChatId();
+        var merchantChat = merchantChatDao.getById(chatId);
+        if (merchantChat.isEmpty()) {
+            log.warn("Merchant chat not found! This must be unreachable, check previous logs");
+            return polyglot.getLocale();
+        }
+        return polyglot.getLocale(merchantChat.get().getLocale());
+    }
+
+    private AdminDisputeReview buildSupportDispute(Message deliveredMessage,
+                                                   ProviderDispute providerDispute,
+                                                   Long replyId) {
+        AdminDisputeReview supportDispute = new AdminDisputeReview();
+        supportDispute.setCreatedAt(LocalDateTime.now());
+        supportDispute.setProviderDisputeId(providerDispute.getId());
+        supportDispute.setTgMessageId(Long.valueOf(deliveredMessage.getMessageId()));
+        supportDispute.setInvoiceId(providerDispute.getInvoiceId());
+        supportDispute.setPaymentId(providerDispute.getPaymentId());
+        supportDispute.setProviderReplyId(replyId);
+        return supportDispute;
+    }
+}

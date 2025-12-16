@@ -1,0 +1,5 @@
+[
+  {"response_type": "pending", "include": "pending", "exclude": []},
+  {"response_type": "approved", "include": "approved", "exclude": ["not"]},
+  {"response_type": "declined", "response_text": "no_transfer",  "include": "no payment", "exclude": []}
+]
