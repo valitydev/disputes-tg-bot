@@ -1,7 +1,7 @@
 package dev.vality.disputes.tg.bot.config;
 
 import dev.vality.bender.BenderSrv;
-import dev.vality.damsel.domain_config.RepositoryClientSrv;
+import dev.vality.damsel.domain_config_v2.RepositoryClientSrv;
 import dev.vality.damsel.payment_processing.InvoicingSrv;
 import dev.vality.disputes.admin.AdminManagementServiceSrv;
 import dev.vality.disputes.merchant.MerchantDisputesServiceSrv;

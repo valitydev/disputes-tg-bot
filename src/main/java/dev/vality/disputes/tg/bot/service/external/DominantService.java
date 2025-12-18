@@ -1,10 +1,7 @@
 package dev.vality.disputes.tg.bot.service.external;
 
-import dev.vality.damsel.domain.Provider;
-import dev.vality.damsel.domain.ProviderRef;
-import dev.vality.damsel.domain.Terminal;
-import dev.vality.damsel.domain.TerminalRef;
-import dev.vality.damsel.domain_config.*;
+import dev.vality.damsel.domain.*;
+import dev.vality.damsel.domain_config_v2.*;
 import dev.vality.disputes.tg.bot.exception.DominantException;
 import dev.vality.disputes.tg.bot.exception.NotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -22,10 +19,10 @@ public class DominantService {
 
     @Cacheable(value = "providers", key = "#providerRef.id", cacheManager = "providersCacheManager")
     public Provider getProvider(ProviderRef providerRef) {
-        return getProvider(providerRef, Reference.head(new Head()));
+        return getProvider(providerRef, VersionReference.head(new Head()));
     }
 
-    private Provider getProvider(ProviderRef providerRef, Reference revisionReference) {
+    private Provider getProvider(ProviderRef providerRef, VersionReference revisionReference) {
         log.debug("Trying to get provider from dominant, providerRef='{}', revisionReference='{}'", providerRef,
                 revisionReference);
         try {
@@ -47,10 +44,10 @@ public class DominantService {
 
     @Cacheable(value = "terminals", key = "#terminalRef.id", cacheManager = "terminalsCacheManager")
     public Terminal getTerminal(TerminalRef terminalRef) {
-        return getTerminal(terminalRef, Reference.head(new Head()));
+        return getTerminal(terminalRef, VersionReference.head(new Head()));
     }
 
-    private Terminal getTerminal(TerminalRef terminalRef, Reference revisionReference) {
+    private Terminal getTerminal(TerminalRef terminalRef, VersionReference revisionReference) {
         log.debug("Trying to get terminal from dominant, terminalRef='{}', revisionReference='{}'", terminalRef,
                 revisionReference);
         try {
@@ -70,8 +67,8 @@ public class DominantService {
         }
     }
 
-    private VersionedObject checkoutObject(Reference revisionReference, dev.vality.damsel.domain.Reference reference)
+    private VersionedObject checkoutObject(VersionReference versionReference, Reference reference)
             throws TException {
-        return dominantClient.checkoutObject(revisionReference, reference);
+        return dominantClient.checkoutObject(versionReference, reference);
     }
 }

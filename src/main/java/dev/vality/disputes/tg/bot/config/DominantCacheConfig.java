@@ -41,7 +41,7 @@ public class DominantCacheConfig {
 
     private Caffeine getCacheConfig(DominantCacheProperties.CacheConfig cacheConfig) {
         return Caffeine.newBuilder()
-                .expireAfterAccess(cacheConfig.getTtlSec(), TimeUnit.SECONDS)
+                .expireAfterWrite(cacheConfig.getTtlSec(), TimeUnit.SECONDS)
                 .maximumSize(cacheConfig.getPoolSize());
     }
 }
