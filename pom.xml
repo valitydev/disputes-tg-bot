@@ -7,7 +7,7 @@
     <parent>
         <groupId>dev.vality</groupId>
         <artifactId>service-parent-pom</artifactId>
-        <version>3.1.2</version>
+        <version>3.1.9</version>
     </parent>
 
     <name>disputes-tg-bot</name>
@@ -29,8 +29,8 @@
         <db.user>postgres</db.user>
         <db.password>postgres</db.password>
         <db.schema>dspt_tg_bot</db.schema>
-        <testcontainers.annotations.version>3.2.1</testcontainers.annotations.version>
-        <org.telegram.telegrambots.version>9.0.0</org.telegram.telegrambots.version>
+        <testcontainers.annotations.version>4.0.0</testcontainers.annotations.version>
+        <org.telegram.telegrambots.version>9.2.0</org.telegram.telegrambots.version>
     </properties>
 
     <dependencyManagement>
@@ -84,17 +84,17 @@
         <dependency>
             <groupId>dev.vality</groupId>
             <artifactId>damsel</artifactId>
-            <version>1.647-b149379</version>
+            <version>1.679-b5c1dc4</version>
         </dependency>
         <dependency>
             <groupId>dev.vality.woody</groupId>
             <artifactId>woody-thrift</artifactId>
-            <version>2.0.9</version>
+            <version>2.1.0</version>
         </dependency>
         <dependency>
             <groupId>dev.vality.woody</groupId>
             <artifactId>woody-api</artifactId>
-            <version>2.0.9</version>
+            <version>2.1.0</version>
         </dependency>
 
         <!--spring-->
@@ -195,7 +195,7 @@
         <dependency>
             <groupId>org.apache.tika</groupId>
             <artifactId>tika-core</artifactId>
-            <version>2.6.0</version>
+            <version>3.2.3</version>
         </dependency>
 
         <!--test-->
