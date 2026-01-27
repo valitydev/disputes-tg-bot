@@ -33,6 +33,10 @@ public class DisputesApiNotificationHandler implements AdminCallbackServiceSrv.I
 
     @Override
     public void notify(Dispute dispute) throws TException {
+        if ("manual_pending".equals(dispute.getStatus())) {
+            log.info("Processing {} notification", dispute);
+            handleManualPending(dispute);
+        }
     }
 
     public void notifyDisabled(Dispute dispute) throws TException {
@@ -57,16 +61,7 @@ public class DisputesApiNotificationHandler implements AdminCallbackServiceSrv.I
                         adminChatProperties.getTopics().getReviewDisputesProcessing());
             }
             case "manual_pending" -> {
-                try {
-                    var supportMessage = getManualPendingMessage(dispute);
-                    var deliveredMessage = telegramApiService.sendMessage(supportMessage, adminChatProperties.getId(),
-                            adminChatProperties.getTopics().getReviewDisputesProcessing());
-                    adminDisputeReviewDao.save(buildAdminDisputeReview(
-                            Long.valueOf(deliveredMessage.orElseThrow().getMessageId()), dispute));
-                } catch (Exception e) {
-                    log.error("Unable to save support dispute", e);
-                    throw e;
-                }
+                handleManualPending(dispute);
             }
             default -> {
                 if ("created".equals(dispute.getStatus())
@@ -126,5 +121,18 @@ public class DisputesApiNotificationHandler implements AdminCallbackServiceSrv.I
         adminDisputeReview.setInvoiceId(dispute.getInvoiceId());
         adminDisputeReview.setPaymentId(dispute.getPaymentId());
         return adminDisputeReview;
+    }
+
+    private void handleManualPending(Dispute dispute) throws TException {
+        try {
+            var supportMessage = getManualPendingMessage(dispute);
+            var deliveredMessage = telegramApiService.sendMessage(supportMessage, adminChatProperties.getId(),
+                    adminChatProperties.getTopics().getReviewDisputesProcessing());
+            adminDisputeReviewDao.save(buildAdminDisputeReview(
+                    Long.valueOf(deliveredMessage.orElseThrow().getMessageId()), dispute));
+        } catch (Exception e) {
+            log.error("Unable to save support dispute", e);
+            throw e;
+        }
     }
 }
