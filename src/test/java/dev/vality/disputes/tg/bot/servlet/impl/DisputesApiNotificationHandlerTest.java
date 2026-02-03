@@ -38,8 +38,7 @@ import java.util.StringJoiner;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @Slf4j
 @ExtendWith(SpringExtension.class)
@@ -135,6 +134,21 @@ class DisputesApiNotificationHandlerTest {
                         "disputes:Rejected, description = test, state = null",
                 new StringJoiner("\n"));
         assertEquals(expectedMessage, text);
+    }
+
+    @Test
+    @DisplayName("notify ignores specific manual_pending")
+    void notifyIgnoresSpecificManualPending() throws Exception {
+        var dispute = new Dispute();
+        dispute.setStatus("manual_pending");
+        dispute.setInvoiceId(INVOICE_ID);
+        dispute.setPaymentId(PAYMENT_ID);
+        dispute.setTechnicalErrorMessage("dispute via disputes-tg-bot");
+
+        notificationHandler.notify(dispute);
+
+        verifyNoInteractions(telegramApiService);
+        verifyNoInteractions(adminDisputeReviewDao);
     }
 
     private Invoice buildInvoice(ProviderRef providerRef) {
