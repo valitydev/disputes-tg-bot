@@ -33,10 +33,56 @@ public class DisputesApiNotificationHandler implements AdminCallbackServiceSrv.I
 
     @Override
     public void notify(Dispute dispute) throws TException {
-        if ("manual_pending".equals(dispute.getStatus())) {
+        if (isUsefulManualPending(dispute)) {
             log.info("Processing {} notification", dispute);
             handleManualPending(dispute);
         }
+    }
+
+    private boolean isUsefulManualPending(Dispute dispute) {
+        return "manual_pending".equals(dispute.getStatus()) && !(dispute.getTechnicalErrorMessage().isPresent()
+                && dispute.getTechnicalErrorMessage().get().contains("dispute via disputes-tg-bot"));
+    }
+
+    private void handleManualPending(Dispute dispute) throws TException {
+        try {
+            var supportMessage = getManualPendingMessage(dispute);
+            var deliveredMessage = telegramApiService.sendMessage(supportMessage, adminChatProperties.getId(),
+                    adminChatProperties.getTopics().getReviewDisputesProcessing());
+            adminDisputeReviewDao.save(buildAdminDisputeReview(
+                    Long.valueOf(deliveredMessage.orElseThrow().getMessageId()), dispute));
+        } catch (Exception e) {
+            log.error("Unable to save support dispute", e);
+            throw e;
+        }
+    }
+
+    @SneakyThrows
+    private String getManualPendingMessage(Dispute dispute) {
+        var invoice = hellgateService.getInvoice(dispute.getInvoiceId());
+        var details = new StringJoiner("\n");
+        dispute.getMapping().ifPresent(v -> details.add("mapping:" + v));
+        dispute.getProviderMessage().ifPresent(v -> details.add("provider-text:" + v));
+        dispute.getTechnicalErrorMessage().ifPresent(v -> details.add("error-text:" + v));
+        var phraseKey =
+                details.length() > 0 ? "dispute.support.manual-pending-with-text" : "dispute.support.manual-pending";
+        String reply;
+        var providerRef = InvoiceUtil.getProviderRef(invoice, dispute.getPaymentId());
+        reply = polyglot.getText(
+                phraseKey,
+                "(%d) %s".formatted(providerRef.getId(), dominantCacheService.getProvider(providerRef).getName()),
+                FormatUtil.formatPaymentId(dispute.getInvoiceId(), dispute.getPaymentId()),
+                InvoiceUtil.getProviderTrxId(InvoiceUtil.getInvoicePayment(invoice, dispute.getPaymentId())),
+                details);
+        return reply;
+    }
+
+    private AdminDisputeReview buildAdminDisputeReview(Long messageId, Dispute dispute) {
+        var adminDisputeReview = new AdminDisputeReview();
+        adminDisputeReview.setTgMessageId(messageId);
+        adminDisputeReview.setInvoiceId(dispute.getInvoiceId());
+        adminDisputeReview.setPaymentId(dispute.getPaymentId());
+        return adminDisputeReview;
     }
 
     public void notifyDisabled(Dispute dispute) throws TException {
@@ -76,26 +122,6 @@ public class DisputesApiNotificationHandler implements AdminCallbackServiceSrv.I
     }
 
     @SneakyThrows
-    private String getManualPendingMessage(Dispute dispute) {
-        var invoice = hellgateService.getInvoice(dispute.getInvoiceId());
-        var details = new StringJoiner("\n");
-        dispute.getMapping().ifPresent(v -> details.add("mapping:" + v));
-        dispute.getProviderMessage().ifPresent(v -> details.add("provider-text:" + v));
-        dispute.getTechnicalErrorMessage().ifPresent(v -> details.add("error-text:" + v));
-        var phraseKey =
-                details.length() > 0 ? "dispute.support.manual-pending-with-text" : "dispute.support.manual-pending";
-        String reply;
-        var providerRef = InvoiceUtil.getProviderRef(invoice, dispute.getPaymentId());
-        reply = polyglot.getText(
-                phraseKey,
-                "(%d) %s".formatted(providerRef.getId(), dominantCacheService.getProvider(providerRef).getName()),
-                FormatUtil.formatPaymentId(dispute.getInvoiceId(), dispute.getPaymentId()),
-                InvoiceUtil.getProviderTrxId(InvoiceUtil.getInvoicePayment(invoice, dispute.getPaymentId())),
-                details);
-        return reply;
-    }
-
-    @SneakyThrows
     private String getStatusChangedMessage(Dispute dispute) {
         var details = new StringJoiner("\n");
         details.add("status:" + dispute.getStatus());
@@ -113,26 +139,5 @@ public class DisputesApiNotificationHandler implements AdminCallbackServiceSrv.I
                 InvoiceUtil.getProviderTrxId(InvoiceUtil.getInvoicePayment(invoice, dispute.getPaymentId())),
                 details);
         return reply;
-    }
-
-    private AdminDisputeReview buildAdminDisputeReview(Long messageId, Dispute dispute) {
-        var adminDisputeReview = new AdminDisputeReview();
-        adminDisputeReview.setTgMessageId(messageId);
-        adminDisputeReview.setInvoiceId(dispute.getInvoiceId());
-        adminDisputeReview.setPaymentId(dispute.getPaymentId());
-        return adminDisputeReview;
-    }
-
-    private void handleManualPending(Dispute dispute) throws TException {
-        try {
-            var supportMessage = getManualPendingMessage(dispute);
-            var deliveredMessage = telegramApiService.sendMessage(supportMessage, adminChatProperties.getId(),
-                    adminChatProperties.getTopics().getReviewDisputesProcessing());
-            adminDisputeReviewDao.save(buildAdminDisputeReview(
-                    Long.valueOf(deliveredMessage.orElseThrow().getMessageId()), dispute));
-        } catch (Exception e) {
-            log.error("Unable to save support dispute", e);
-            throw e;
-        }
     }
 }
