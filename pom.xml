@@ -12,7 +12,7 @@
 
     <name>disputes-tg-bot</name>
     <artifactId>disputes-tg-bot</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.1</version>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -84,7 +84,7 @@
         <dependency>
             <groupId>dev.vality</groupId>
             <artifactId>damsel</artifactId>
-            <version>1.679-b5c1dc4</version>
+            <version>1.685-5c25c2e</version>
         </dependency>
         <dependency>
             <groupId>dev.vality.woody</groupId>
