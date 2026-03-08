@@ -12,7 +12,7 @@
 
     <name>disputes-tg-bot</name>
     <artifactId>disputes-tg-bot</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.1</version>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -30,7 +30,7 @@
         <db.password>postgres</db.password>
         <db.schema>dspt_tg_bot</db.schema>
         <testcontainers.annotations.version>4.0.0</testcontainers.annotations.version>
-        <org.telegram.telegrambots.version>9.2.0</org.telegram.telegrambots.version>
+        <org.telegram.telegrambots.version>9.4.0</org.telegram.telegrambots.version>
     </properties>
 
     <dependencyManagement>
@@ -38,7 +38,7 @@
             <dependency>
                 <groupId>org.springframework.cloud</groupId>
                 <artifactId>spring-cloud-dependencies</artifactId>
-                <version>2025.0.0</version>
+                <version>2025.1.1</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -190,7 +190,7 @@
         <dependency>
             <groupId>org.apache.httpcomponents.client5</groupId>
             <artifactId>httpclient5</artifactId>
-            <version>5.5</version>
+            <version>5.6</version>
         </dependency>
         <dependency>
             <groupId>org.apache.tika</groupId>
@@ -248,12 +248,12 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-remote-resources-plugin</artifactId>
-                <version>3.2.0</version>
+                <version>3.3.0</version>
                 <dependencies>
                     <dependency>
                         <groupId>org.apache.maven.shared</groupId>
                         <artifactId>maven-filtering</artifactId>
-                        <version>3.4.0</version>
+                        <version>3.5.0</version>
                     </dependency>
                 </dependencies>
                 <configuration>
