@@ -40,6 +40,8 @@ public class DisputeCreationService {
         providerDispute.setInvoiceId(disputeParams.getTransactionContext().getInvoiceId());
         providerDispute.setPaymentId(disputeParams.getTransactionContext().getPaymentId());
         providerDispute.setProviderTrxId(disputeParams.getTransactionContext().getProviderTrxId());
+        providerDispute.setPayerEmail(disputeParams.getPayerEmail().orElse(null));
+        providerDispute.setRiskScore(disputeParams.getRiskScore().orElse(null));
         return providerDispute;
     }
 
@@ -50,4 +52,4 @@ public class DisputeCreationService {
         }
         return providerDispute;
     }
-} 
+}
