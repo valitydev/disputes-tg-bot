@@ -10,6 +10,7 @@ import dev.vality.disputes.tg.bot.exception.DisputeCreationException;
 import dev.vality.disputes.tg.bot.exception.NotSupportedOperationException;
 import dev.vality.disputes.tg.bot.service.external.DominantService;
 import dev.vality.disputes.tg.bot.service.external.HellgateService;
+import dev.vality.disputes.tg.bot.util.FormatUtil;
 import dev.vality.disputes.tg.bot.util.InvoiceUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -78,7 +79,9 @@ public class DisputesHandler implements ProviderDisputesServiceSrv.Iface {
                 paymentRoute.getTerminal().getId(), terminal.getName(),
                 trxContext.getProviderTrxId(),
                 trxContext.getInvoiceId() + "." + trxContext.getPaymentId(),
-                disputeParams.getDisputeId().orElseThrow());
+                disputeParams.getDisputeId().orElseThrow(),
+                FormatUtil.formatOptional(disputeParams.getPayerEmail().orElse(null)),
+                FormatUtil.formatOptional(disputeParams.getRiskScore().orElse(null)));
         telegramApiService.sendMessageWithDocument(text, adminChatProperties.getId(),
                 adminChatProperties.getTopics().getUnknownProvider(), file);
         return createSuccessResult(disputeParams.getDisputeId().get());

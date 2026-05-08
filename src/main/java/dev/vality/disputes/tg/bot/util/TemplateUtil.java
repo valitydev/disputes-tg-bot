@@ -14,7 +14,9 @@ public class TemplateUtil {
                 .replaceAll("\\$\\{payment_id}", disputeParams.getTransactionContext().getPaymentId())
                 .replaceAll("\\$\\{provider_trx_id}", disputeParams.getTransactionContext().getProviderTrxId())
                 .replaceAll("\\$\\{amount}", FormatUtil.getFormattedAmount(disputeParams))
-                .replaceAll("\\$\\{terminal_id}",terminalId);
+                .replaceAll("\\$\\{terminal_id}", terminalId)
+                .replaceAll("\\$\\{payer_email}", FormatUtil.formatOptional(disputeParams.getPayerEmail().orElse(null)))
+                .replaceAll("\\$\\{risk_score}", FormatUtil.formatOptional(disputeParams.getRiskScore().orElse(null)));
     }
 
-} 
+}

@@ -53,7 +53,9 @@ public class TelegramNotificationService {
             return polyglot.getText("dispute.provider.create",
                     disputeParams.getTransactionContext().getProviderTrxId(),
                     FormatUtil.formatPaymentId(disputeParams.getTransactionContext()),
-                    disputeId.toString());
+                    disputeId.toString(),
+                    FormatUtil.formatOptional(disputeParams.getPayerEmail().orElse(null)),
+                    FormatUtil.formatOptional(disputeParams.getRiskScore().orElse(null)));
         }
     }
 
@@ -68,4 +70,4 @@ public class TelegramNotificationService {
             return "null";
         }
     }
-} 
+}

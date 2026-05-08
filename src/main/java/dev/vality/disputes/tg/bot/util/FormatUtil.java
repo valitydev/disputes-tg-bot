@@ -34,4 +34,8 @@ public class FormatUtil {
                 .stripTrailingZeros()
                 .toPlainString();
     }
-} 
+
+    public static String formatOptional(String value) {
+        return value == null ? "null" : value;
+    }
+}
