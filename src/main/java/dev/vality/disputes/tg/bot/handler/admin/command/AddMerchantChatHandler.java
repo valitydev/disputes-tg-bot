@@ -85,6 +85,7 @@ public class AddMerchantChatHandler implements AdminMessageHandler {
         MerchantChat merchantChat = new MerchantChat();
         merchantChat.setChatId(chatInfo.getId());
         merchantChat.setTitle(chatInfo.getTitle());
+        merchantChat.setTemplate(addMerchantChatCommand.getTemplate());
         long chatId = merchantChatDao.save(merchantChat);
         log.info("Chat saved successfully with id: {}", chatId);
 

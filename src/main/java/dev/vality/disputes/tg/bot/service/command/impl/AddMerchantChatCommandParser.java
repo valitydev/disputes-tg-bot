@@ -19,7 +19,7 @@ public class AddMerchantChatCommandParser implements CommandParser<AddMerchantCh
 
     @Override
     public AddMerchantChatCommand parse(@NonNull String messageText) {
-        if (!CommandValidationUtil.hasExpectedArgsCount(messageText, 1)) {
+        if (!CommandValidationUtil.hasExpectedArgsCount(messageText, 2)) {
             return AddMerchantChatCommand.builder()
                     .validationError(CommandValidationError.ARGUMENT_NUMBER_MISMATCH)
                     .build();
@@ -33,8 +33,15 @@ public class AddMerchantChatCommandParser implements CommandParser<AddMerchantCh
                     .build();
         }
 
+        String template = null;
+        String[] parts = messageText.split("\\s+", 3);
+        if (parts.length > 2) {
+            template = CommandValidationUtil.extractNullableString(parts[2]);
+        }
+
         return AddMerchantChatCommand.builder()
                 .chatId(chatId.get())
+                .template(template)
                 .build();
     }
 

@@ -105,8 +105,8 @@ public class TextParsingUtil {
         if (text == null) {
             return Optional.empty();
         }
-        String[] parts = text.split("\\s");
-        if (parts.length != 2) {
+        String[] parts = text.trim().split("\\s+");
+        if (parts.length < 2) {
             return Optional.empty();
         }
         return Optional.of(parts[1]);
