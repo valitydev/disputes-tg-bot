@@ -7,7 +7,7 @@
     <parent>
         <groupId>dev.vality</groupId>
         <artifactId>service-parent-pom</artifactId>
-        <version>3.1.9</version>
+        <version>3.1.11</version>
     </parent>
 
     <name>disputes-tg-bot</name>
@@ -29,7 +29,7 @@
         <db.user>postgres</db.user>
         <db.password>postgres</db.password>
         <db.schema>dspt_tg_bot</db.schema>
-        <testcontainers.annotations.version>4.0.0</testcontainers.annotations.version>
+        <testcontainers.annotations.version>4.2.1</testcontainers.annotations.version>
         <org.telegram.telegrambots.version>9.2.0</org.telegram.telegrambots.version>
     </properties>
 

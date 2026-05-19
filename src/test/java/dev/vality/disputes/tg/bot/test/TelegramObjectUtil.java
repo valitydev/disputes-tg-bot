@@ -12,7 +12,7 @@ import java.util.Random;
 @UtilityClass
 public class TelegramObjectUtil {
 
-    public static final String ADD_MERCHANT_CHAT_COMMAND = "/am %d";
+    public static final String ADD_MERCHANT_CHAT_COMMAND = "/am %d null";
     public static final String DISABLE_MERCHANT_CHAT_COMMAND = "/dm %d";
     public static final String TEST_INVOICE_ID = "11Testtt1h1";
     public static final String MERCHANT_CREATE_DISPUTE_COMMAND = "/c " + TEST_INVOICE_ID;

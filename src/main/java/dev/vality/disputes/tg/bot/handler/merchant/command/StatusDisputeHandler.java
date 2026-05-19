@@ -15,6 +15,7 @@ import dev.vality.disputes.tg.bot.service.Polyglot;
 import dev.vality.disputes.tg.bot.service.TelegramApiService;
 import dev.vality.disputes.tg.bot.service.command.impl.StatusDisputeCommandParser;
 import dev.vality.disputes.tg.bot.service.external.DisputesApiService;
+import dev.vality.disputes.tg.bot.util.TemplateUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -70,7 +71,7 @@ public class StatusDisputeHandler implements MerchantMessageHandler {
             return;
         }
         updateDisputesStatuses(matchingDisputes);
-        String response = buildPlainTextResponse(matchingDisputes, replyLocale);
+        String response = buildPlainTextResponse(matchingDisputes, replyLocale, message);
         telegramApiService.sendReplyTo(response, update);
     }
 
@@ -109,11 +110,20 @@ public class StatusDisputeHandler implements MerchantMessageHandler {
         }
     }
 
-    private String buildPlainTextResponse(List<MerchantDispute> disputes, Locale replyLocale) {
+    private String buildPlainTextResponse(List<MerchantDispute> disputes, Locale replyLocale,
+                                          MerchantMessageDto message) {
         return disputes.stream()
                 .max(Comparator.comparing(MerchantDispute::getCreatedAt))
-                .map(dispute -> prepareStatusMessage(dispute, replyLocale, polyglot))
+                .map(dispute -> buildStatusResponse(dispute, replyLocale, message))
                 .orElseThrow(() -> new UnexpectedException("Disputes list cannot be empty!"));
+    }
+
+    private String buildStatusResponse(MerchantDispute dispute, Locale replyLocale, MerchantMessageDto message) {
+        var template = message.getMerchantChat().getTemplate();
+        if (template == null || template.isBlank()) {
+            return prepareStatusMessage(dispute, replyLocale, polyglot);
+        }
+        return TemplateUtil.prepareMerchantStatusDisputeTemplate(template, dispute);
     }
 
     private void updateDisputeInfo(MerchantDispute dispute, DisputeStatusResult disputeStatusResult) {
