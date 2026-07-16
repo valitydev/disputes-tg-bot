@@ -105,9 +105,9 @@ public class ProviderRepliedToDisputeHandler implements ProviderMessageHandler {
         var pattern = optionalPattern.orElse(new ResponsePattern());
         switch (pattern.getResponseType()) {
             case APPROVED -> {
+                updateProviderMessage(providerDispute, replyText);
                 sendAdminMessage(message, providerDispute,
                         adminChatProperties.getTopics().getApprovedDisputesProcessing());
-                updateProviderMessage(providerDispute, replyText);
             }
             case PENDING -> {
                 log.info("Provider reply '{}' matches '{}' type, support won't be notified",
@@ -115,7 +115,10 @@ public class ProviderRepliedToDisputeHandler implements ProviderMessageHandler {
                 updateProviderMessage(providerDispute, replyText);
             }
             case DECLINED -> handleDeclinedDispute(providerDispute, pattern, replyText);
-            case null -> handleUnknownResponse(message, providerDispute, replyId);
+            case null -> {
+                updateProviderMessage(providerDispute, replyText);
+                handleUnknownResponse(message, providerDispute, replyId);
+            }
         }
 
         if (pattern.getResponseType() != null && DECLINED.equals(pattern.getResponseType())) {
