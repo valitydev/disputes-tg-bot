@@ -22,6 +22,15 @@ public class TelegramUtil {
 
     private static final String htmlParseMode = "HTML";
 
+    public static String escapeHtml(String text) {
+        if (text == null) {
+            return null;
+        }
+        return text.replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;");
+    }
+
     public static Long getChatId(Update update) {
         if (update.hasMessage() && update.getMessage().getChatId() != null) {
             return update.getMessage().getChatId();
