@@ -4,7 +4,6 @@ import dev.vality.disputes.tg.bot.dao.MerchantChatDao;
 import dev.vality.disputes.tg.bot.dto.command.UnbindMerchantPartyCommand;
 import dev.vality.disputes.tg.bot.dto.command.UnbindPartyType;
 import dev.vality.disputes.tg.bot.dto.command.error.CommandValidationError;
-import dev.vality.disputes.tg.bot.service.TelegramApiService;
 import dev.vality.disputes.tg.bot.service.command.CommandParser;
 import dev.vality.disputes.tg.bot.util.CommandValidationUtil;
 import lombok.RequiredArgsConstructor;
@@ -23,7 +22,6 @@ public class UnbindMerchantPartyCommandParser implements CommandParser<UnbindMer
     private static final String FULL_COMMAND = "/unbind ";
 
     private final MerchantChatDao merchantChatDao;
-    private final TelegramApiService telegramApiService;
 
     @Override
     public UnbindMerchantPartyCommand parse(@NonNull String messageText) {
@@ -39,14 +37,6 @@ public class UnbindMerchantPartyCommandParser implements CommandParser<UnbindMer
         if (chatIdOpt.isEmpty()) {
             return UnbindMerchantPartyCommand.builder()
                     .validationError(CommandValidationError.INVALID_CHAT_ID)
-                    .build();
-        }
-
-        // Проверяем существование чата в Telegram
-        if (telegramApiService.getChatInfo(chatIdOpt.get()).isEmpty()) {
-            log.warn("Chat not found in Telegram: {}", chatIdOpt.get());
-            return UnbindMerchantPartyCommand.builder()
-                    .validationError(CommandValidationError.CHAT_NOT_FOUND_IN_TELEGRAM)
                     .build();
         }
 
@@ -75,4 +65,4 @@ public class UnbindMerchantPartyCommandParser implements CommandParser<UnbindMer
         return commandString.startsWith(LATIN_SINGLE_LETTER) || commandString.startsWith(FULL_COMMAND);
     }
 
-} 
+}
