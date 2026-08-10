@@ -1,9 +1,11 @@
 package dev.vality.disputes.tg.bot.service;
 
+import dev.vality.disputes.tg.bot.util.TelegramUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Service;
 
+import java.util.Arrays;
 import java.util.Locale;
 
 @Service
@@ -26,10 +28,19 @@ public class Polyglot {
     }
 
     public String getText(Locale locale, String phraseKey, Object... args) {
-        return messageSource.getMessage(phraseKey, args, locale);
+        return messageSource.getMessage(phraseKey, escapeHtmlArgs(args), locale);
     }
 
     public String getText(String phraseKey, Object... args) {
         return getText(DEFAULT_LOCALE, phraseKey, args);
+    }
+
+    private Object[] escapeHtmlArgs(Object[] args) {
+        if (args == null) {
+            return null;
+        }
+        return Arrays.stream(args)
+                .map(arg -> arg == null ? null : TelegramUtil.escapeHtml(arg.toString()))
+                .toArray(Object[]::new);
     }
 }
