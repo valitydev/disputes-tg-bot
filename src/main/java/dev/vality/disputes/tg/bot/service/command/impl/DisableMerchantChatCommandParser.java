@@ -5,7 +5,7 @@ import dev.vality.disputes.tg.bot.dto.command.error.CommandValidationError;
 import dev.vality.disputes.tg.bot.service.command.CommandParser;
 import dev.vality.disputes.tg.bot.util.CommandValidationUtil;
 import lombok.RequiredArgsConstructor;
-import org.springframework.lang.NonNull;
+import org.jspecify.annotations.NonNull;
 import org.springframework.stereotype.Component;
 
 @Component

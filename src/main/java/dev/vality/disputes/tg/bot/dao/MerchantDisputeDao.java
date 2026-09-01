@@ -5,6 +5,7 @@ import dev.vality.disputes.tg.bot.domain.enums.DisputeStatus;
 import dev.vality.disputes.tg.bot.domain.tables.pojos.MerchantDispute;
 import dev.vality.disputes.tg.bot.dto.DisputeInfoDto;
 import dev.vality.mapper.RecordRowMapper;
+import org.springframework.boot.sql.init.dependency.DependsOnDatabaseInitialization;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.stereotype.Component;
@@ -17,6 +18,7 @@ import java.util.UUID;
 import static dev.vality.disputes.tg.bot.domain.tables.MerchantDispute.MERCHANT_DISPUTE;
 
 @Component
+@DependsOnDatabaseInitialization
 public class MerchantDisputeDao extends AbstractGenericDao {
 
     private final RowMapper<MerchantDispute> disputeRowMapper;

@@ -9,7 +9,6 @@ import org.telegram.telegrambots.longpolling.BotSession;
 import org.telegram.telegrambots.longpolling.interfaces.LongPollingUpdateConsumer;
 import org.telegram.telegrambots.longpolling.starter.AfterBotRegistration;
 import org.telegram.telegrambots.longpolling.starter.SpringLongPollingBot;
-import org.telegram.telegrambots.longpolling.util.LongPollingSingleThreadUpdateConsumer;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
 import java.util.List;
@@ -18,7 +17,7 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class DisputesBot implements SpringLongPollingBot, LongPollingSingleThreadUpdateConsumer {
+public class DisputesBot implements SpringLongPollingBot, LongPollingUpdateConsumer {
 
     private final BotProperties botProperties;
     private final List<TelegramEventHandler> handlers;
@@ -30,10 +29,14 @@ public class DisputesBot implements SpringLongPollingBot, LongPollingSingleThrea
 
     @Override
     public LongPollingUpdateConsumer getUpdatesConsumer() {
-        return (List<Update> updates) ->  updates.forEach(this::consume);
+        return this;
     }
 
     @Override
+    public void consume(List<Update> updates) {
+        updates.forEach(this::consume);
+    }
+
     public void consume(Update update) {
         try {
             log.debug("[{}] Update received: {}", update.getUpdateId(), update);

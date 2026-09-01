@@ -1,7 +1,7 @@
 package dev.vality.disputes.tg.bot.config;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
 import dev.vality.disputes.tg.bot.config.model.ResponsePattern;
 import dev.vality.disputes.tg.bot.config.properties.DictionaryProperties;
 import lombok.RequiredArgsConstructor;
@@ -21,7 +21,7 @@ public class ResponseDictionaryConfig {
 
     @Bean
     public List<ResponsePattern> providerResponseDictionary(ObjectMapper objectMapper) throws IOException {
-        return objectMapper.readValue(dictionaryProperties.getFile().getURL(), new TypeReference<>() {
+        return objectMapper.readValue(dictionaryProperties.getFile().getURL().openStream(), new TypeReference<>() {
         });
     }
 
@@ -33,4 +33,4 @@ public class ResponseDictionaryConfig {
         msgSrc.setFallbackToSystemLocale(false);
         return msgSrc;
     }
-} 
+}

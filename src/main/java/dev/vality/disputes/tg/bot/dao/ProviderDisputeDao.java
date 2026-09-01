@@ -3,6 +3,7 @@ package dev.vality.disputes.tg.bot.dao;
 import dev.vality.dao.impl.AbstractGenericDao;
 import dev.vality.disputes.tg.bot.domain.tables.pojos.ProviderDispute;
 import dev.vality.mapper.RecordRowMapper;
+import org.springframework.boot.sql.init.dependency.DependsOnDatabaseInitialization;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Component;
 
@@ -14,6 +15,7 @@ import java.util.UUID;
 import static dev.vality.disputes.tg.bot.domain.tables.ProviderDispute.PROVIDER_DISPUTE;
 
 @Component
+@DependsOnDatabaseInitialization
 public class ProviderDisputeDao extends AbstractGenericDao {
 
     private final RowMapper<ProviderDispute> disputeRowMapper;

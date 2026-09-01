@@ -8,7 +8,7 @@ import dev.vality.disputes.tg.bot.service.command.CommandParser;
 import dev.vality.disputes.tg.bot.util.CommandValidationUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.lang.NonNull;
+import org.jspecify.annotations.NonNull;
 import org.springframework.stereotype.Component;
 
 import java.util.Optional;

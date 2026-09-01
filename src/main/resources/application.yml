@@ -10,9 +10,9 @@ management:
     health:
       show-details: always
     metrics:
-      access: unrestricted
+      access: read-only
     prometheus:
-      access: unrestricted
+      access: read-only
   endpoints:
     web:
       exposure:
