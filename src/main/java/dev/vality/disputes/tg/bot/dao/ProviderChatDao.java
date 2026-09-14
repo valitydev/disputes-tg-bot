@@ -4,6 +4,7 @@ import dev.vality.dao.impl.AbstractGenericDao;
 import dev.vality.disputes.tg.bot.domain.tables.pojos.ProviderChat;
 import dev.vality.mapper.RecordRowMapper;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.sql.init.dependency.DependsOnDatabaseInitialization;
 import org.springframework.jdbc.JdbcUpdateAffectedIncorrectNumberOfRowsException;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Component;
@@ -16,6 +17,7 @@ import static dev.vality.disputes.tg.bot.domain.Tables.PROVIDER_CHAT;
 
 @Slf4j
 @Component
+@DependsOnDatabaseInitialization
 @SuppressWarnings({"ParameterName", "LineLength"})
 public class ProviderChatDao extends AbstractGenericDao {
 

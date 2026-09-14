@@ -1,5 +1,6 @@
 package dev.vality.disputes.tg.bot.config.properties;
 
+import jakarta.validation.Valid;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -13,7 +14,9 @@ import org.springframework.validation.annotation.Validated;
 @ConfigurationProperties(prefix = "service.dominant.cache")
 public class DominantCacheProperties {
 
+    @Valid
     private CacheConfig providers;
+    @Valid
     private CacheConfig terminals;
 
     @Getter

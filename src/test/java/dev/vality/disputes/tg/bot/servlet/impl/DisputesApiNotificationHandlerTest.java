@@ -21,15 +21,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.telegram.telegrambots.meta.api.objects.message.Message;
 
 import java.util.List;
@@ -37,12 +34,10 @@ import java.util.Optional;
 import java.util.StringJoiner;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @Slf4j
-@ExtendWith(SpringExtension.class)
-@ContextConfiguration(classes = {
+@SpringJUnitConfig(classes = {
         DisputesApiNotificationHandler.class,
         Polyglot.class,
         ResponseDictionaryConfig.class,
@@ -63,9 +58,7 @@ class DisputesApiNotificationHandlerTest {
     private HellgateService hellgateService;
     @MockitoBean
     private AdminDisputeReviewDao adminDisputeReviewDao;
-    @Captor
     private ArgumentCaptor<AdminDisputeReview> reviewCaptor;
-    @Captor
     private ArgumentCaptor<String> messageCaptor;
 
     @Autowired
@@ -89,6 +82,8 @@ class DisputesApiNotificationHandlerTest {
 
     @BeforeEach
     void setUp() {
+        reviewCaptor = ArgumentCaptor.forClass(AdminDisputeReview.class);
+        messageCaptor = ArgumentCaptor.forClass(String.class);
         adminChatProperties.setId(10L);
         var topics = new AdminChatProperties.Topic();
         topics.setReviewDisputesProcessing(20);

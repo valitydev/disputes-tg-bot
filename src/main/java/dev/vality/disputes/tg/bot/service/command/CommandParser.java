@@ -1,6 +1,6 @@
 package dev.vality.disputes.tg.bot.service.command;
 
-import org.springframework.lang.NonNull;
+import org.jspecify.annotations.NonNull;
 
 public interface CommandParser<T> {
 

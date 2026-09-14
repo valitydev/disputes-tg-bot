@@ -3,7 +3,7 @@ package dev.vality.disputes.tg.bot.dto.command;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.SuperBuilder;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 @Data
 @SuperBuilder

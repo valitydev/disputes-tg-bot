@@ -3,6 +3,7 @@ package dev.vality.disputes.tg.bot.dao;
 import dev.vality.dao.impl.AbstractGenericDao;
 import dev.vality.disputes.tg.bot.domain.tables.pojos.AdminDisputeReview;
 import dev.vality.mapper.RecordRowMapper;
+import org.springframework.boot.sql.init.dependency.DependsOnDatabaseInitialization;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.stereotype.Component;
@@ -13,6 +14,7 @@ import java.util.Optional;
 import static dev.vality.disputes.tg.bot.domain.tables.AdminDisputeReview.ADMIN_DISPUTE_REVIEW;
 
 @Component
+@DependsOnDatabaseInitialization
 public class AdminDisputeReviewDao extends AbstractGenericDao {
 
     private final RowMapper<AdminDisputeReview> disputeRowMapper;

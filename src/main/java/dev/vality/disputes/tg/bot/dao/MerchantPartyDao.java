@@ -5,6 +5,7 @@ import dev.vality.disputes.tg.bot.domain.tables.pojos.MerchantParty;
 import dev.vality.disputes.tg.bot.exception.NotFoundException;
 import dev.vality.mapper.RecordRowMapper;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.sql.init.dependency.DependsOnDatabaseInitialization;
 import org.springframework.jdbc.JdbcUpdateAffectedIncorrectNumberOfRowsException;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Component;
@@ -17,6 +18,7 @@ import static dev.vality.disputes.tg.bot.domain.Tables.MERCHANT_PARTY;
 
 @Slf4j
 @Component
+@DependsOnDatabaseInitialization
 public class MerchantPartyDao extends AbstractGenericDao {
 
     private final RowMapper<MerchantParty> merchantPartyRowMapper;
