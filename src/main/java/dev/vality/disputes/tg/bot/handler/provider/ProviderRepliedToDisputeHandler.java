@@ -139,7 +139,9 @@ public class ProviderRepliedToDisputeHandler implements ProviderMessageHandler {
         if (disputes == null || disputes.isEmpty()) {
             throw new NotFoundException("Unable to find dispute info");
         }
-        log.warn("Found {} provider disputes, but will return only first one", disputes.size());
+        if (disputes.size() > 1) {
+            log.warn("Found {} provider disputes, but will return only first one", disputes.size());
+        }
         return disputes.getFirst();
     }
 

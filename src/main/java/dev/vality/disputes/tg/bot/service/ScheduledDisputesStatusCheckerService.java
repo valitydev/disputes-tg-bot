@@ -39,6 +39,7 @@ public class ScheduledDisputesStatusCheckerService {
             var disputes = merchantDisputeDao.getPendingDisputesSkipLocked(batchSize);
             if (disputes.isEmpty()) {
                 log.debug("Found 0 pending disputes");
+                return;
             } else {
                 log.info("Found {} pending disputes", disputes.size());
             }
@@ -46,8 +47,10 @@ public class ScheduledDisputesStatusCheckerService {
             List<MerchantDispute> finalizedDisputes =
                     disputes.stream().filter(dispute -> !DisputeStatus.pending.equals(dispute.getStatus()))
                             .toList();
-            log.info("Finalized {} disputes by schedule", finalizedDisputes.size());
-            finalizedDisputes.forEach(this::sendReply);
+            if (!finalizedDisputes.isEmpty()) {
+                log.info("Finalized {} disputes by schedule", finalizedDisputes.size());
+                finalizedDisputes.forEach(this::sendReply);
+            }
         } catch (Exception ex) {
             log.error("Received exception while scheduled processing created disputes", ex);
         }
