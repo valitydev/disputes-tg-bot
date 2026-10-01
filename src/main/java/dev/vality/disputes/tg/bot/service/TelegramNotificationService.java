@@ -2,6 +2,8 @@ package dev.vality.disputes.tg.bot.service;
 
 import dev.vality.disputes.provider.DisputeParams;
 import dev.vality.disputes.tg.bot.dao.ProviderDisputeDao;
+import dev.vality.disputes.tg.bot.dao.MerchantChatDao;
+import dev.vality.disputes.tg.bot.domain.tables.pojos.MerchantDispute;
 import dev.vality.disputes.tg.bot.domain.tables.pojos.ProviderChat;
 import dev.vality.disputes.tg.bot.service.external.HellgateService;
 import dev.vality.disputes.tg.bot.util.FormatUtil;
@@ -15,6 +17,8 @@ import org.telegram.telegrambots.meta.api.objects.InputFile;
 
 import java.util.UUID;
 
+import static dev.vality.disputes.tg.bot.util.PolyglotUtil.prepareStatusMessage;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -24,6 +28,18 @@ public class TelegramNotificationService {
     private final TelegramApiService telegramApiService;
     private final ProviderDisputeDao providerDisputeDao;
     private final HellgateService hellgateService;
+    private final MerchantChatDao merchantChatDao;
+
+    public void sendDisputeStatusToMerchant(MerchantDispute dispute) {
+        try {
+            merchantChatDao.getById(dispute.getChatId()).ifPresent(chat -> {
+                var reply = prepareStatusMessage(dispute, polyglot.getLocale(chat.getLocale()), polyglot);
+                telegramApiService.sendReplyTo(reply, chat.getChatId(), Math.toIntExact(dispute.getTgMessageId()));
+            });
+        } catch (Exception e) {
+            log.error("Failed to send dispute status to merchant, dispute: {}", dispute.getId(), e);
+        }
+    }
 
     @Transactional
     public void sendDisputeNotificationToProvider(ProviderChat chat, DisputeParams disputeParams,
