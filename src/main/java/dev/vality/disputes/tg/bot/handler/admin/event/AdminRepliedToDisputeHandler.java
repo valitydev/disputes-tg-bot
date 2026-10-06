@@ -57,7 +57,6 @@ public class AdminRepliedToDisputeHandler implements AdminMessageHandler {
                 () -> new ConfigurationException("Unreachable point, check application configuration"));
 
         CancelParams cancelParams = new CancelParams();
-        String text = TelegramUtil.extractText(update);
         cancelParams.setInvoiceId(dispute.getInvoiceId());
         cancelParams.setPaymentId(dispute.getPaymentId());
         if (dispute.getProviderReplyId() != null) {
@@ -66,6 +65,7 @@ public class AdminRepliedToDisputeHandler implements AdminMessageHandler {
                 cancelParams.setProviderMessage(providerReply.getReplyText());
             }
         }
+        String text = TelegramUtil.extractText(update);
         cancelParams.setMapping(text);
 
         adminManagementClient.cancelPending(new CancelParamsRequest(List.of(cancelParams)));
