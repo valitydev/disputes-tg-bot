@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 
+import static dev.vality.disputes.tg.bot.util.FormatUtil.prepareForLog;
 import static dev.vality.disputes.tg.bot.util.PolyglotUtil.explanation;
 import static dev.vality.disputes.tg.bot.util.PolyglotUtil.prepareStatusMessage;
 import static dev.vality.disputes.tg.bot.util.TelegramUtil.extractText;
@@ -65,7 +66,7 @@ public class StatusDisputeHandler implements MerchantMessageHandler {
 
         List<MerchantDispute> matchingDisputes = findDisputes(command.getDisputeInfo());
         if (matchingDisputes.isEmpty()) {
-            log.info("Dispute not found: {}", messageText);
+            log.info("Dispute not found: {}", prepareForLog(messageText));
             String reply = polyglot.getText(replyLocale, "error.input.dispute-not-found");
             telegramApiService.sendReplyTo(reply, update);
             return;
