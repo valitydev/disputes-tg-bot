@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 
+import static dev.vality.disputes.tg.bot.util.FormatUtil.prepareForLog;
 import static dev.vality.disputes.tg.bot.util.TelegramUtil.extractText;
 import static dev.vality.disputes.tg.bot.util.TelegramUtil.hasAttachment;
 
@@ -66,7 +67,7 @@ public class CreateDisputeHandler implements MerchantMessageHandler {
         log.info("[{}] Processing create dispute request", message.getUpdate().getUpdateId());
         Update update = message.getUpdate();
         String messageText = extractText(update);
-        log.info("[{}] Extracted text: {}", update.getUpdateId(), messageText);
+        log.info("[{}] Extracted text: {}", update.getUpdateId(), prepareForLog(messageText));
         
         var createDisputeCommand = createDisputeCommandParser.parse(messageText);
         Locale replyLocale = polyglot.getLocale(message.getMerchantChat().getLocale());

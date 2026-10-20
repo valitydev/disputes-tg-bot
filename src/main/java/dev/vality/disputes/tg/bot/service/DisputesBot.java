@@ -14,6 +14,8 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static dev.vality.disputes.tg.bot.util.FormatUtil.prepareForLog;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -39,14 +41,15 @@ public class DisputesBot implements SpringLongPollingBot, LongPollingUpdateConsu
 
     public void consume(Update update) {
         try {
-            log.debug("[{}] Update received: {}", update.getUpdateId(), update);
+            log.debug("[{}] Update received: {}", update.getUpdateId(), prepareForLog(update.toString()));
             var applicableHandlers = handlers.stream()
                     .filter(handler -> handler.filter(update)).collect(Collectors.toSet());
             log.debug("[{}] Found {} applicable root handlers", update.getUpdateId(), applicableHandlers.size());
             applicableHandlers.forEach(
                     handler -> handler.handle(update));
             if (applicableHandlers.isEmpty()) {
-                log.info("[{}] No suitable handler found for update: {}", update.getUpdateId(), update);
+                log.info("[{}] No suitable handler found for update: {}",
+                        update.getUpdateId(), prepareForLog(update.toString()));
             }
         } catch (Exception e) {
             log.error("[{}] Unexpected error occurred: ", update.getUpdateId(), e);
