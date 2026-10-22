@@ -54,30 +54,35 @@ public class DisputesApiNotificationHandler implements AdminCallbackServiceSrv.I
             var deliveredMessage = telegramApiService.sendMessage(supportMessage, adminChatProperties.getId(),
                     adminChatProperties.getTopics().getReviewDisputesProcessing()).orElseThrow();
             adminDisputeReviewDao.save(buildAdminDisputeReview(Long.valueOf(deliveredMessage.getMessageId()), dispute));
-            sendAttachment(dispute, deliveredMessage.getMessageId());
+            sendAttachments(dispute, deliveredMessage.getMessageId());
         } catch (Exception e) {
             log.error("Unable to save support dispute", e);
             throw e;
         }
     }
 
-    private void sendAttachment(Dispute dispute, Integer replyToMessageId) {
+    private void sendAttachments(Dispute dispute, Integer replyToMessageId) {
         var attachments = dispute.getAttachments().orElseGet(List::of);
         if (attachments.isEmpty()) {
             return;
         }
-        if (attachments.size() > 1) {
-            log.warn("Dispute {} has {} attachments, only the first one will be sent",
-                    dispute.getDisputeId(), attachments.size());
-        }
+        UUID disputeId;
         try {
-            var disputeId = UUID.fromString(dispute.getDisputeId());
-            var attachment = attachmentConverter.convert(disputeId, attachments.getFirst());
-            telegramApiService.sendDocumentReply(adminChatProperties.getId(),
-                    adminChatProperties.getTopics().getReviewDisputesProcessing(), replyToMessageId, attachment);
-        } catch (Exception e) {
-            log.warn("Unable to send attachment for dispute {}, text notification has already been sent",
+            disputeId = UUID.fromString(dispute.getDisputeId());
+        } catch (IllegalArgumentException e) {
+            log.warn("Unable to send attachments for dispute {}, text notification has already been sent",
                     dispute.getDisputeId(), e);
+            return;
+        }
+        for (int i = 0; i < attachments.size(); i++) {
+            try {
+                var attachment = attachmentConverter.convert(disputeId, attachments.get(i));
+                telegramApiService.sendDocumentReply(adminChatProperties.getId(),
+                        adminChatProperties.getTopics().getReviewDisputesProcessing(), replyToMessageId, attachment);
+            } catch (Exception e) {
+                log.warn("Unable to send attachment {} of {} for dispute {}, continuing with the remaining files",
+                        i + 1, attachments.size(), dispute.getDisputeId(), e);
+            }
         }
     }
 
