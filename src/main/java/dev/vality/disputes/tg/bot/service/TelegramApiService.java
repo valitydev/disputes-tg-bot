@@ -88,6 +88,17 @@ public class TelegramApiService {
         return sendMessageWithDocument(messageText, chatId, null, attachment);
     }
 
+    public Optional<Message> sendDocumentReply(Long chatId, Integer threadId, Integer replyToMessageId,
+                                               InputFile attachment) {
+        try {
+            var sendDocument = TelegramUtil.buildDocumentReply(chatId, threadId, replyToMessageId, attachment);
+            return Optional.of(telegramClient.execute(sendDocument));
+        } catch (TelegramApiException e) {
+            log.error("Failed to send document", e);
+            return Optional.empty();
+        }
+    }
+
     public Optional<Message> sendMessageWithPhoto(String messageText, Long chatId, Integer threadId,
                                                   InputFile attachment) {
         try {

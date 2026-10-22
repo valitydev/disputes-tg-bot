@@ -119,6 +119,16 @@ public class TelegramUtil {
                 .build();
     }
 
+    public static SendDocument buildDocumentReply(Long chatId, Integer threadId, Integer replyToMessageId,
+                                                  InputFile attachment) {
+        return SendDocument.builder()
+                .chatId(chatId)
+                .messageThreadId(threadId)
+                .replyToMessageId(replyToMessageId)
+                .document(attachment)
+                .build();
+    }
+
     public static SendPhoto buildTextWithPhotoResponse(Long chatId, String text, InputFile attachment) {
         return buildTextWithPhotoResponse(chatId, null, text, attachment);
     }
@@ -233,8 +243,12 @@ public class TelegramUtil {
     }
 
     public static InputFile convertToInputFile(File document, String fileName) {
+        return convertToInputFile(document.getContent(), fileName);
+    }
+
+    public static InputFile convertToInputFile(byte[] content, String fileName) {
         InputFile file = new InputFile();
-        file.setMedia(new ByteArrayInputStream(document.getContent()), fileName);
+        file.setMedia(new ByteArrayInputStream(content), fileName);
         return file;
     }
 }

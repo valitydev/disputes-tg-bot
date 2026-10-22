@@ -3,6 +3,7 @@ package dev.vality.disputes.tg.bot.servlet.impl;
 import dev.vality.disputes.admin.AdminCallbackServiceSrv;
 import dev.vality.disputes.admin.Dispute;
 import dev.vality.disputes.tg.bot.config.properties.AdminChatProperties;
+import dev.vality.disputes.tg.bot.converter.AdminDisputeAttachmentConverter;
 import dev.vality.disputes.tg.bot.dao.AdminDisputeReviewDao;
 import dev.vality.disputes.tg.bot.domain.tables.pojos.AdminDisputeReview;
 import dev.vality.disputes.tg.bot.service.Polyglot;
@@ -17,7 +18,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.thrift.TException;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.StringJoiner;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -30,6 +33,7 @@ public class DisputesApiNotificationHandler implements AdminCallbackServiceSrv.I
     private final DominantService dominantCacheService;
     private final HellgateService hellgateService;
     private final AdminDisputeReviewDao adminDisputeReviewDao;
+    private final AdminDisputeAttachmentConverter attachmentConverter;
 
     @Override
     public void notify(Dispute dispute) throws TException {
@@ -48,12 +52,32 @@ public class DisputesApiNotificationHandler implements AdminCallbackServiceSrv.I
         try {
             var supportMessage = getManualPendingMessage(dispute);
             var deliveredMessage = telegramApiService.sendMessage(supportMessage, adminChatProperties.getId(),
-                    adminChatProperties.getTopics().getReviewDisputesProcessing());
-            adminDisputeReviewDao.save(buildAdminDisputeReview(
-                    Long.valueOf(deliveredMessage.orElseThrow().getMessageId()), dispute));
+                    adminChatProperties.getTopics().getReviewDisputesProcessing()).orElseThrow();
+            adminDisputeReviewDao.save(buildAdminDisputeReview(Long.valueOf(deliveredMessage.getMessageId()), dispute));
+            sendAttachment(dispute, deliveredMessage.getMessageId());
         } catch (Exception e) {
             log.error("Unable to save support dispute", e);
             throw e;
+        }
+    }
+
+    private void sendAttachment(Dispute dispute, Integer replyToMessageId) {
+        var attachments = dispute.getAttachments().orElseGet(List::of);
+        if (attachments.isEmpty()) {
+            return;
+        }
+        if (attachments.size() > 1) {
+            log.warn("Dispute {} has {} attachments, only the first one will be sent",
+                    dispute.getDisputeId(), attachments.size());
+        }
+        try {
+            var disputeId = UUID.fromString(dispute.getDisputeId());
+            var attachment = attachmentConverter.convert(disputeId, attachments.getFirst());
+            telegramApiService.sendDocumentReply(adminChatProperties.getId(),
+                    adminChatProperties.getTopics().getReviewDisputesProcessing(), replyToMessageId, attachment);
+        } catch (Exception e) {
+            log.warn("Unable to send attachment for dispute {}, text notification has already been sent",
+                    dispute.getDisputeId(), e);
         }
     }
 
