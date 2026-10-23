@@ -7,6 +7,7 @@ import dev.vality.woody.api.flow.error.WRuntimeException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.thrift.TException;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 @Slf4j
@@ -16,8 +17,12 @@ public class DisputesApiService {
 
     private final MerchantDisputesServiceSrv.Iface disputesMerchantClient;
 
+    @Value("${dispute.notification-url}")
+    private String notificationUrl;
+
     public DisputeCreatedResult createDispute(DisputeParams disputeParams) {
         try {
+            disputeParams.setNotificationUrl(notificationUrl);
             log.debug("CreateDispute for invoice_id '{}', payment_id '{}' and {} attachments",
                     disputeParams.getInvoiceId(), disputeParams.getPaymentId(), disputeParams.getAttachmentsSize());
             var result = disputesMerchantClient.createDispute(disputeParams);

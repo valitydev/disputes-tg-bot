@@ -1,4 +1,4 @@
-package dev.vality.disputes.tg.bot.servlet.impl;
+package dev.vality.disputes.tg.bot.resource.impl;
 
 import dev.vality.damsel.domain.PaymentRoute;
 import dev.vality.damsel.domain.Provider;
