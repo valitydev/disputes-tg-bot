@@ -3,6 +3,7 @@ package dev.vality.disputes.tg.bot.servlet.impl;
 import dev.vality.disputes.admin.AdminCallbackServiceSrv;
 import dev.vality.disputes.admin.Dispute;
 import dev.vality.disputes.tg.bot.config.properties.AdminChatProperties;
+import dev.vality.disputes.tg.bot.converter.AdminDisputeAttachmentConverter;
 import dev.vality.disputes.tg.bot.dao.AdminDisputeReviewDao;
 import dev.vality.disputes.tg.bot.domain.tables.pojos.AdminDisputeReview;
 import dev.vality.disputes.tg.bot.service.Polyglot;
@@ -16,8 +17,13 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.thrift.TException;
 import org.springframework.stereotype.Service;
+import org.telegram.telegrambots.meta.api.objects.InputFile;
+import org.telegram.telegrambots.meta.api.objects.message.Message;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.StringJoiner;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -30,6 +36,7 @@ public class DisputesApiNotificationHandler implements AdminCallbackServiceSrv.I
     private final DominantService dominantCacheService;
     private final HellgateService hellgateService;
     private final AdminDisputeReviewDao adminDisputeReviewDao;
+    private final AdminDisputeAttachmentConverter attachmentConverter;
 
     @Override
     public void notify(Dispute dispute) throws TException {
@@ -47,14 +54,51 @@ public class DisputesApiNotificationHandler implements AdminCallbackServiceSrv.I
     private void handleManualPending(Dispute dispute) throws TException {
         try {
             var supportMessage = getManualPendingMessage(dispute);
-            var deliveredMessage = telegramApiService.sendMessage(supportMessage, adminChatProperties.getId(),
-                    adminChatProperties.getTopics().getReviewDisputesProcessing());
-            adminDisputeReviewDao.save(buildAdminDisputeReview(
-                    Long.valueOf(deliveredMessage.orElseThrow().getMessageId()), dispute));
+            var attachments = prepareAttachments(dispute);
+            var deliveredMessage = sendSupportMessage(supportMessage, attachments);
+            adminDisputeReviewDao.save(buildAdminDisputeReview(Long.valueOf(deliveredMessage.getMessageId()), dispute));
         } catch (Exception e) {
             log.error("Unable to save support dispute", e);
             throw e;
         }
+    }
+
+    private List<InputFile> prepareAttachments(Dispute dispute) {
+        var attachmentRefs = dispute.getAttachmentRefs().orElseGet(List::of);
+        if (attachmentRefs.isEmpty()) {
+            return List.of();
+        }
+        UUID disputeId;
+        try {
+            disputeId = UUID.fromString(dispute.getDisputeId());
+        } catch (IllegalArgumentException e) {
+            log.warn("Unable to prepare attachments for dispute {}, sending text notification",
+                    dispute.getDisputeId(), e);
+            return List.of();
+        }
+        var attachments = new ArrayList<InputFile>(attachmentRefs.size());
+        for (int i = 0; i < attachmentRefs.size(); i++) {
+            try {
+                attachments.add(attachmentConverter.convert(disputeId, attachmentRefs.get(i)));
+            } catch (Exception e) {
+                log.warn("Unable to prepare attachment {} of {} for dispute {}, continuing with the remaining files",
+                        i + 1, attachmentRefs.size(), dispute.getDisputeId(), e);
+            }
+        }
+        return attachments;
+    }
+
+    private Message sendSupportMessage(String text, List<InputFile> attachments) {
+        var chatId = adminChatProperties.getId();
+        var threadId = adminChatProperties.getTopics().getReviewDisputesProcessing();
+        return switch (attachments.size()) {
+            case 0 -> telegramApiService.sendMessage(text, chatId, threadId).orElseThrow();
+            case 1 -> telegramApiService.sendMessageWithDocument(text, chatId, threadId, attachments.getFirst())
+                    .orElseThrow();
+            default -> telegramApiService.sendMessageWithDocuments(text, chatId, threadId, attachments)
+                    .flatMap(messages -> messages.stream().findFirst())
+                    .orElseThrow();
+        };
     }
 
     @SneakyThrows

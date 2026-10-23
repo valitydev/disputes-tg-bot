@@ -4,6 +4,7 @@ import dev.vality.disputes.tg.bot.dto.File;
 import lombok.experimental.UtilityClass;
 import org.telegram.telegrambots.meta.api.methods.reactions.SetMessageReaction;
 import org.telegram.telegrambots.meta.api.methods.send.SendDocument;
+import org.telegram.telegrambots.meta.api.methods.send.SendMediaGroup;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
 import org.telegram.telegrambots.meta.api.methods.send.SendVideo;
@@ -11,6 +12,8 @@ import org.telegram.telegrambots.meta.api.objects.InputFile;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.User;
 import org.telegram.telegrambots.meta.api.objects.message.Message;
+import org.telegram.telegrambots.meta.api.objects.media.InputMedia;
+import org.telegram.telegrambots.meta.api.objects.media.InputMediaDocument;
 import org.telegram.telegrambots.meta.api.objects.reactions.ReactionTypeEmoji;
 
 import java.io.ByteArrayInputStream;
@@ -116,6 +119,27 @@ public class TelegramUtil {
                 .parseMode(htmlParseMode)
                 .document(attachment)
                 .caption(text)
+                .build();
+    }
+
+    public static SendMediaGroup buildTextWithDocumentsResponse(Long chatId, Integer threadId, String text,
+                                                                List<InputFile> attachments) {
+        var documents = attachments.stream()
+                .map(TelegramUtil::convertToInputMediaDocument)
+                .map(InputMedia.class::cast)
+                .toList();
+        documents.getFirst().setCaption(text);
+        documents.getFirst().setParseMode(htmlParseMode);
+        return SendMediaGroup.builder()
+                .chatId(chatId)
+                .messageThreadId(threadId)
+                .medias(documents)
+                .build();
+    }
+
+    private static InputMediaDocument convertToInputMediaDocument(InputFile attachment) {
+        return InputMediaDocument.builder()
+                .media(attachment.getNewMediaStream(), attachment.getMediaName())
                 .build();
     }
 
@@ -233,8 +257,12 @@ public class TelegramUtil {
     }
 
     public static InputFile convertToInputFile(File document, String fileName) {
+        return convertToInputFile(document.getContent(), fileName);
+    }
+
+    public static InputFile convertToInputFile(byte[] content, String fileName) {
         InputFile file = new InputFile();
-        file.setMedia(new ByteArrayInputStream(document.getContent()), fileName);
+        file.setMedia(new ByteArrayInputStream(content), fileName);
         return file;
     }
 }
