@@ -17,7 +17,10 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.thrift.TException;
 import org.springframework.stereotype.Service;
+import org.telegram.telegrambots.meta.api.objects.InputFile;
+import org.telegram.telegrambots.meta.api.objects.message.Message;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.StringJoiner;
 import java.util.UUID;
@@ -51,39 +54,51 @@ public class DisputesApiNotificationHandler implements AdminCallbackServiceSrv.I
     private void handleManualPending(Dispute dispute) throws TException {
         try {
             var supportMessage = getManualPendingMessage(dispute);
-            var deliveredMessage = telegramApiService.sendMessage(supportMessage, adminChatProperties.getId(),
-                    adminChatProperties.getTopics().getReviewDisputesProcessing()).orElseThrow();
+            var attachments = prepareAttachments(dispute);
+            var deliveredMessage = sendSupportMessage(supportMessage, attachments);
             adminDisputeReviewDao.save(buildAdminDisputeReview(Long.valueOf(deliveredMessage.getMessageId()), dispute));
-            sendAttachments(dispute, deliveredMessage.getMessageId());
         } catch (Exception e) {
             log.error("Unable to save support dispute", e);
             throw e;
         }
     }
 
-    private void sendAttachments(Dispute dispute, Integer replyToMessageId) {
-        var attachments = dispute.getAttachments().orElseGet(List::of);
-        if (attachments.isEmpty()) {
-            return;
+    private List<InputFile> prepareAttachments(Dispute dispute) {
+        var attachmentRefs = dispute.getAttachmentRefs().orElseGet(List::of);
+        if (attachmentRefs.isEmpty()) {
+            return List.of();
         }
         UUID disputeId;
         try {
             disputeId = UUID.fromString(dispute.getDisputeId());
         } catch (IllegalArgumentException e) {
-            log.warn("Unable to send attachments for dispute {}, text notification has already been sent",
+            log.warn("Unable to prepare attachments for dispute {}, sending text notification",
                     dispute.getDisputeId(), e);
-            return;
+            return List.of();
         }
-        for (int i = 0; i < attachments.size(); i++) {
+        var attachments = new ArrayList<InputFile>(attachmentRefs.size());
+        for (int i = 0; i < attachmentRefs.size(); i++) {
             try {
-                var attachment = attachmentConverter.convert(disputeId, attachments.get(i));
-                telegramApiService.sendDocumentReply(adminChatProperties.getId(),
-                        adminChatProperties.getTopics().getReviewDisputesProcessing(), replyToMessageId, attachment);
+                attachments.add(attachmentConverter.convert(disputeId, attachmentRefs.get(i)));
             } catch (Exception e) {
-                log.warn("Unable to send attachment {} of {} for dispute {}, continuing with the remaining files",
-                        i + 1, attachments.size(), dispute.getDisputeId(), e);
+                log.warn("Unable to prepare attachment {} of {} for dispute {}, continuing with the remaining files",
+                        i + 1, attachmentRefs.size(), dispute.getDisputeId(), e);
             }
         }
+        return attachments;
+    }
+
+    private Message sendSupportMessage(String text, List<InputFile> attachments) {
+        var chatId = adminChatProperties.getId();
+        var threadId = adminChatProperties.getTopics().getReviewDisputesProcessing();
+        return switch (attachments.size()) {
+            case 0 -> telegramApiService.sendMessage(text, chatId, threadId).orElseThrow();
+            case 1 -> telegramApiService.sendMessageWithDocument(text, chatId, threadId, attachments.getFirst())
+                    .orElseThrow();
+            default -> telegramApiService.sendMessageWithDocuments(text, chatId, threadId, attachments)
+                    .flatMap(messages -> messages.stream().findFirst())
+                    .orElseThrow();
+        };
     }
 
     @SneakyThrows

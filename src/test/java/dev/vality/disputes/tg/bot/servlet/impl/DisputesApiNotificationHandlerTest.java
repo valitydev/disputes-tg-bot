@@ -7,7 +7,7 @@ import dev.vality.damsel.domain.TerminalRef;
 import dev.vality.damsel.domain.TransactionInfo;
 import dev.vality.damsel.payment_processing.Invoice;
 import dev.vality.damsel.payment_processing.InvoicePayment;
-import dev.vality.disputes.admin.Attachment;
+import dev.vality.disputes.admin.AttachmentRef;
 import dev.vality.disputes.admin.Dispute;
 import dev.vality.disputes.tg.bot.config.ResponseDictionaryConfig;
 import dev.vality.disputes.tg.bot.config.properties.AdminChatProperties;
@@ -157,14 +157,14 @@ class DisputesApiNotificationHandlerTest {
     @Test
     @DisplayName("notify sends all manual_pending dispute attachments")
     void notifyManualPendingSendsAllAttachments() throws Exception {
-        var firstAttachment = new Attachment().setData("first".getBytes());
-        var secondAttachment = new Attachment().setData("second".getBytes());
+        var firstAttachment = new AttachmentRef("file-1", "application/pdf");
+        var secondAttachment = new AttachmentRef("file-2", "image/png");
         var dispute = new Dispute();
         dispute.setDisputeId(DISPUTE_ID.toString());
         dispute.setStatus("manual_pending");
         dispute.setInvoiceId(INVOICE_ID);
         dispute.setPaymentId(PAYMENT_ID);
-        dispute.setAttachments(List.of(firstAttachment, secondAttachment));
+        dispute.setAttachmentRefs(List.of(firstAttachment, secondAttachment));
 
         var providerRef = new ProviderRef().setId(1);
         when(hellgateService.getInvoice(INVOICE_ID)).thenReturn(buildInvoice(providerRef));
@@ -176,63 +176,92 @@ class DisputesApiNotificationHandlerTest {
         when(attachmentConverter.convert(DISPUTE_ID, secondAttachment)).thenReturn(secondInputFile);
         var message = new Message();
         message.setMessageId((int) TG_MESSAGE_ID);
-        when(telegramApiService.sendMessage(anyString(), anyLong(), anyInt())).thenReturn(Optional.of(message));
+        var secondMessage = new Message();
+        secondMessage.setMessageId((int) TG_MESSAGE_ID + 1);
+        when(telegramApiService.sendMessageWithDocuments(anyString(), anyLong(), anyInt(), anyList()))
+                .thenReturn(Optional.of(List.of(message, secondMessage)));
 
         notificationHandler.notify(dispute);
 
         verify(attachmentConverter).convert(DISPUTE_ID, firstAttachment);
         verify(attachmentConverter).convert(DISPUTE_ID, secondAttachment);
-        verify(telegramApiService).sendDocumentReply(
-                eq(adminChatProperties.getId()),
+        verify(telegramApiService).sendMessageWithDocuments(
+                anyString(), eq(adminChatProperties.getId()),
                 eq(adminChatProperties.getTopics().getReviewDisputesProcessing()),
-                eq((int) TG_MESSAGE_ID),
-                same(firstInputFile));
-        verify(telegramApiService).sendDocumentReply(
-                eq(adminChatProperties.getId()),
-                eq(adminChatProperties.getTopics().getReviewDisputesProcessing()),
-                eq((int) TG_MESSAGE_ID),
-                same(secondInputFile));
+                eq(List.of(firstInputFile, secondInputFile)));
+        verify(telegramApiService, never()).sendMessage(anyString(), anyLong(), anyInt());
         verify(adminDisputeReviewDao).save(reviewCaptor.capture());
         assertEquals(TG_MESSAGE_ID, reviewCaptor.getValue().getTgMessageId());
         InOrder flow = inOrder(telegramApiService, adminDisputeReviewDao);
-        flow.verify(telegramApiService).sendMessage(anyString(), anyLong(), anyInt());
+        flow.verify(telegramApiService).sendMessageWithDocuments(anyString(), anyLong(), anyInt(), anyList());
         flow.verify(adminDisputeReviewDao).save(any(AdminDisputeReview.class));
-        flow.verify(telegramApiService).sendDocumentReply(anyLong(), anyInt(), anyInt(), same(firstInputFile));
-        flow.verify(telegramApiService).sendDocumentReply(anyLong(), anyInt(), anyInt(), same(secondInputFile));
     }
 
     @Test
-    @DisplayName("notify preserves text flow when attachment preparation fails")
-    void notifyManualPendingPreservesTextFlowOnAttachmentFailure() throws Exception {
-        var brokenAttachment = new Attachment().setData("broken".getBytes());
-        var validAttachment = new Attachment().setData("valid".getBytes());
+    @DisplayName("notify sends one manual_pending dispute attachment as document with caption")
+    void notifyManualPendingSendsSingleAttachment() throws Exception {
+        var attachmentRef = new AttachmentRef("file-1", "application/pdf");
         var dispute = new Dispute();
         dispute.setDisputeId(DISPUTE_ID.toString());
         dispute.setStatus("manual_pending");
         dispute.setInvoiceId(INVOICE_ID);
         dispute.setPaymentId(PAYMENT_ID);
-        dispute.setAttachments(List.of(brokenAttachment, validAttachment));
+        dispute.setAttachmentRefs(List.of(attachmentRef));
+
+        var providerRef = new ProviderRef().setId(1);
+        when(hellgateService.getInvoice(INVOICE_ID)).thenReturn(buildInvoice(providerRef));
+        when(dominantService.getProvider(providerRef)).thenReturn(new Provider().setName("Provider"));
+        var inputFile = new InputFile();
+        when(attachmentConverter.convert(DISPUTE_ID, attachmentRef)).thenReturn(inputFile);
+        var message = new Message();
+        message.setMessageId((int) TG_MESSAGE_ID);
+        when(telegramApiService.sendMessageWithDocument(anyString(), anyLong(), anyInt(), same(inputFile)))
+                .thenReturn(Optional.of(message));
+
+        notificationHandler.notify(dispute);
+
+        verify(telegramApiService).sendMessageWithDocument(
+                anyString(), eq(adminChatProperties.getId()),
+                eq(adminChatProperties.getTopics().getReviewDisputesProcessing()), same(inputFile));
+        verify(telegramApiService, never()).sendMessage(anyString(), anyLong(), anyInt());
+        verify(telegramApiService, never()).sendMessageWithDocuments(anyString(), anyLong(), anyInt(), anyList());
+        verify(adminDisputeReviewDao).save(reviewCaptor.capture());
+        assertEquals(TG_MESSAGE_ID, reviewCaptor.getValue().getTgMessageId());
+    }
+
+    @Test
+    @DisplayName("notify preserves text flow when attachment preparation fails")
+    void notifyManualPendingPreservesTextFlowOnAttachmentFailure() throws Exception {
+        var brokenAttachment = new AttachmentRef("broken-file", "application/pdf");
+        var validAttachment = new AttachmentRef("valid-file", "image/png");
+        var dispute = new Dispute();
+        dispute.setDisputeId(DISPUTE_ID.toString());
+        dispute.setStatus("manual_pending");
+        dispute.setInvoiceId(INVOICE_ID);
+        dispute.setPaymentId(PAYMENT_ID);
+        dispute.setAttachmentRefs(List.of(brokenAttachment, validAttachment));
 
         var providerRef = new ProviderRef().setId(1);
         when(hellgateService.getInvoice(INVOICE_ID)).thenReturn(buildInvoice(providerRef));
         when(dominantService.getProvider(providerRef)).thenReturn(new Provider().setName("Provider"));
         var message = new Message();
         message.setMessageId((int) TG_MESSAGE_ID);
-        when(telegramApiService.sendMessage(anyString(), anyLong(), anyInt())).thenReturn(Optional.of(message));
         when(attachmentConverter.convert(DISPUTE_ID, brokenAttachment))
                 .thenThrow(new IllegalArgumentException("Invalid attachment"));
         var inputFile = new InputFile();
         when(attachmentConverter.convert(DISPUTE_ID, validAttachment)).thenReturn(inputFile);
+        when(telegramApiService.sendMessageWithDocument(anyString(), anyLong(), anyInt(), same(inputFile)))
+                .thenReturn(Optional.of(message));
 
         notificationHandler.notify(dispute);
 
         verify(adminDisputeReviewDao).save(reviewCaptor.capture());
         assertEquals(TG_MESSAGE_ID, reviewCaptor.getValue().getTgMessageId());
-        verify(telegramApiService).sendDocumentReply(
-                eq(adminChatProperties.getId()),
+        verify(telegramApiService).sendMessageWithDocument(
+                anyString(), eq(adminChatProperties.getId()),
                 eq(adminChatProperties.getTopics().getReviewDisputesProcessing()),
-                eq((int) TG_MESSAGE_ID),
                 same(inputFile));
+        verify(telegramApiService, never()).sendMessageWithDocuments(anyString(), anyLong(), anyInt(), anyList());
     }
 
     @Test
@@ -243,7 +272,7 @@ class DisputesApiNotificationHandlerTest {
         dispute.setStatus("manual_pending");
         dispute.setInvoiceId(INVOICE_ID);
         dispute.setPaymentId(PAYMENT_ID);
-        dispute.setAttachments(List.of(new Attachment().setData("attachment".getBytes())));
+        dispute.setAttachmentRefs(List.of(new AttachmentRef("file-id", "application/pdf")));
 
         var providerRef = new ProviderRef().setId(1);
         when(hellgateService.getInvoice(INVOICE_ID)).thenReturn(buildInvoice(providerRef));
@@ -257,7 +286,8 @@ class DisputesApiNotificationHandlerTest {
         verify(adminDisputeReviewDao).save(reviewCaptor.capture());
         assertEquals(TG_MESSAGE_ID, reviewCaptor.getValue().getTgMessageId());
         verifyNoInteractions(attachmentConverter);
-        verify(telegramApiService, never()).sendDocumentReply(anyLong(), anyInt(), anyInt(), any());
+        verify(telegramApiService, never()).sendMessageWithDocument(anyString(), anyLong(), anyInt(), any());
+        verify(telegramApiService, never()).sendMessageWithDocuments(anyString(), anyLong(), anyInt(), anyList());
     }
 
     private Invoice buildInvoice(ProviderRef providerRef) {

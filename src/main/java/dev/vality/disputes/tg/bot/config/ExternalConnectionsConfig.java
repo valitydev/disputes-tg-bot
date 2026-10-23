@@ -6,6 +6,8 @@ import dev.vality.damsel.payment_processing.InvoicingSrv;
 import dev.vality.disputes.admin.AdminManagementServiceSrv;
 import dev.vality.disputes.merchant.MerchantDisputesServiceSrv;
 import dev.vality.disputes.tg.bot.config.properties.BotProperties;
+import dev.vality.disputes.tg.bot.config.properties.FileStorageProperties;
+import dev.vality.file.storage.FileStorageSrv;
 import dev.vality.woody.thrift.impl.http.THSpawnClientBuilder;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.client5.http.impl.classic.HttpClients;
@@ -69,6 +71,14 @@ public class ExternalConnectionsConfig {
                 .withAddress(resource.getURI())
                 .withNetworkTimeout(networkTimeout)
                 .build(MerchantDisputesServiceSrv.Iface.class);
+    }
+
+    @Bean
+    public FileStorageSrv.Iface fileStorageClient(FileStorageProperties properties) throws IOException {
+        return new THSpawnClientBuilder()
+                .withAddress(properties.getUrl().getURI())
+                .withNetworkTimeout(properties.getNetworkTimeout())
+                .build(FileStorageSrv.Iface.class);
     }
 
     @Bean

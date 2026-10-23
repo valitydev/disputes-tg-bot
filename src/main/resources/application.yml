@@ -94,6 +94,10 @@ service:
   disputes-api-merchant:
     url: http://localhost:8022/change_it
     networkTimeout: 5000
+  file-storage:
+    url: http://localhost:8022/change_it
+    networkTimeout: 5000
+    downloadUrlLifetime: 5m
   provider-payments-management:
     url: http://localhost:8022/change_it
 

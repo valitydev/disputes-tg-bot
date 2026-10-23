@@ -15,6 +15,7 @@ import org.telegram.telegrambots.meta.generics.TelegramClient;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.List;
 import java.util.Optional;
 
 @Slf4j
@@ -88,13 +89,14 @@ public class TelegramApiService {
         return sendMessageWithDocument(messageText, chatId, null, attachment);
     }
 
-    public Optional<Message> sendDocumentReply(Long chatId, Integer threadId, Integer replyToMessageId,
-                                               InputFile attachment) {
+    public Optional<List<Message>> sendMessageWithDocuments(String messageText, Long chatId, Integer threadId,
+                                                            List<InputFile> attachments) {
         try {
-            var sendDocument = TelegramUtil.buildDocumentReply(chatId, threadId, replyToMessageId, attachment);
-            return Optional.of(telegramClient.execute(sendDocument));
+            var sendMediaGroup =
+                    TelegramUtil.buildTextWithDocumentsResponse(chatId, threadId, messageText, attachments);
+            return Optional.of(telegramClient.execute(sendMediaGroup));
         } catch (TelegramApiException e) {
-            log.error("Failed to send document", e);
+            log.error("Failed to send media group", e);
             return Optional.empty();
         }
     }
