@@ -69,6 +69,9 @@ public class DisputesApiNotificationHandler implements AdminCallbackServiceSrv.I
     private List<InputFile> prepareAttachments(Dispute dispute) {
         var attachmentRefs = dispute.getAttachmentRefs().orElseGet(List::of);
         int attachmentCount = Math.min(attachmentRefs.size(), MAX_ATTACHMENTS);
+        if (attachmentCount < attachmentRefs.size()) {
+            log.warn("Got {} attachments, but will process only {} first files", attachmentRefs.size(), MAX_ATTACHMENTS);
+        }
         var attachments = new ArrayList<InputFile>(attachmentCount);
         for (int i = 0; i < attachmentCount; i++) {
             try {
