@@ -3,9 +3,9 @@ package dev.vality.disputes.tg.bot.servlet.impl;
 import dev.vality.disputes.admin.AdminCallbackServiceSrv;
 import dev.vality.disputes.admin.Dispute;
 import dev.vality.disputes.tg.bot.config.properties.AdminChatProperties;
-import dev.vality.disputes.tg.bot.converter.AdminDisputeAttachmentConverter;
 import dev.vality.disputes.tg.bot.dao.AdminDisputeReviewDao;
 import dev.vality.disputes.tg.bot.domain.tables.pojos.AdminDisputeReview;
+import dev.vality.disputes.tg.bot.service.AttachmentService;
 import dev.vality.disputes.tg.bot.service.Polyglot;
 import dev.vality.disputes.tg.bot.service.TelegramApiService;
 import dev.vality.disputes.tg.bot.service.external.DominantService;
@@ -23,12 +23,14 @@ import org.telegram.telegrambots.meta.api.objects.message.Message;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.StringJoiner;
-import java.util.UUID;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class DisputesApiNotificationHandler implements AdminCallbackServiceSrv.Iface {
+
+    private static final int MAX_CAPTION_LENGTH = 1024;
+    private static final int MAX_ATTACHMENTS = 10;
 
     private final AdminChatProperties adminChatProperties;
     private final TelegramApiService telegramApiService;
@@ -36,7 +38,7 @@ public class DisputesApiNotificationHandler implements AdminCallbackServiceSrv.I
     private final DominantService dominantCacheService;
     private final HellgateService hellgateService;
     private final AdminDisputeReviewDao adminDisputeReviewDao;
-    private final AdminDisputeAttachmentConverter attachmentConverter;
+    private final AttachmentService attachmentService;
 
     @Override
     public void notify(Dispute dispute) throws TException {
@@ -55,8 +57,9 @@ public class DisputesApiNotificationHandler implements AdminCallbackServiceSrv.I
         try {
             var supportMessage = getManualPendingMessage(dispute);
             var attachments = prepareAttachments(dispute);
-            var deliveredMessage = sendSupportMessage(supportMessage, attachments);
-            adminDisputeReviewDao.save(buildAdminDisputeReview(Long.valueOf(deliveredMessage.getMessageId()), dispute));
+            for (var message : sendSupportMessages(supportMessage, attachments)) {
+                adminDisputeReviewDao.save(buildAdminDisputeReview(Long.valueOf(message.getMessageId()), dispute));
+            }
         } catch (Exception e) {
             log.error("Unable to save support dispute", e);
             throw e;
@@ -65,40 +68,39 @@ public class DisputesApiNotificationHandler implements AdminCallbackServiceSrv.I
 
     private List<InputFile> prepareAttachments(Dispute dispute) {
         var attachmentRefs = dispute.getAttachmentRefs().orElseGet(List::of);
-        if (attachmentRefs.isEmpty()) {
-            return List.of();
-        }
-        UUID disputeId;
-        try {
-            disputeId = UUID.fromString(dispute.getDisputeId());
-        } catch (IllegalArgumentException e) {
-            log.warn("Unable to prepare attachments for dispute {}, sending text notification",
-                    dispute.getDisputeId(), e);
-            return List.of();
-        }
-        var attachments = new ArrayList<InputFile>(attachmentRefs.size());
-        for (int i = 0; i < attachmentRefs.size(); i++) {
+        int attachmentCount = Math.min(attachmentRefs.size(), MAX_ATTACHMENTS);
+        var attachments = new ArrayList<InputFile>(attachmentCount);
+        for (int i = 0; i < attachmentCount; i++) {
             try {
-                attachments.add(attachmentConverter.convert(disputeId, attachmentRefs.get(i)));
+                attachments.add(attachmentService.prepareAttachment(
+                        dispute.getDisputeId() + "-" + (i + 1), attachmentRefs.get(i)));
             } catch (Exception e) {
                 log.warn("Unable to prepare attachment {} of {} for dispute {}, continuing with the remaining files",
-                        i + 1, attachmentRefs.size(), dispute.getDisputeId(), e);
+                        i + 1, attachmentCount, dispute.getDisputeId(), e);
             }
         }
         return attachments;
     }
 
-    private Message sendSupportMessage(String text, List<InputFile> attachments) {
+    private List<Message> sendSupportMessages(String text, List<InputFile> attachments) {
         var chatId = adminChatProperties.getId();
         var threadId = adminChatProperties.getTopics().getReviewDisputesProcessing();
-        return switch (attachments.size()) {
-            case 0 -> telegramApiService.sendMessage(text, chatId, threadId).orElseThrow();
-            case 1 -> telegramApiService.sendMessageWithDocument(text, chatId, threadId, attachments.getFirst())
-                    .orElseThrow();
-            default -> telegramApiService.sendMessageWithDocuments(text, chatId, threadId, attachments)
-                    .flatMap(messages -> messages.stream().findFirst())
-                    .orElseThrow();
-        };
+        var messages = new ArrayList<Message>();
+        if (attachments.isEmpty() || text.length() > MAX_CAPTION_LENGTH) {
+            messages.add(telegramApiService.sendMessage(text, chatId, threadId).orElseThrow());
+        }
+        if (!attachments.isEmpty()) {
+            var caption = messages.isEmpty() ? text : null;
+            var delivered = attachments.size() == 1
+                    ? telegramApiService.sendMessageWithDocument(caption, chatId, threadId, attachments.getFirst())
+                            .map(List::of)
+                    : telegramApiService.sendMessageWithDocuments(caption, chatId, threadId, attachments);
+            messages.addAll(delivered.orElseGet(List::of));
+            if (messages.isEmpty()) {
+                messages.add(telegramApiService.sendMessage(text, chatId, threadId).orElseThrow());
+            }
+        }
+        return messages;
     }
 
     @SneakyThrows

@@ -36,11 +36,11 @@ public class FileStorageService {
         return convertProviderAttachmentToFile(attachment, content);
     }
 
-    public File downloadAdminAttachment(AttachmentRef attachmentRef) {
+    public byte[] downloadAdminAttachment(AttachmentRef attachmentRef) {
         try {
             var content = downloadContent(attachmentRef.getSourceUrl());
             log.info("Attachment downloaded successfully ({}kb)", content.length / 1024);
-            return convertAdminAttachmentToFile(attachmentRef, content);
+            return content;
         } catch (IOException e) {
             throw new FileStorageException("Unable to download attachment", e);
         }
@@ -53,13 +53,6 @@ public class FileStorageService {
         var document = new File();
         document.setContent(content);
         document.setMediaType(mediaType);
-        return document;
-    }
-
-    private static File convertAdminAttachmentToFile(AttachmentRef attachmentRef, byte[] content) {
-        var document = new File();
-        document.setContent(content);
-        document.setMediaType(MediaType.parseMediaType(attachmentRef.getMimeType()));
         return document;
     }
 

@@ -9,7 +9,6 @@ import org.junit.jupiter.api.Test;
 import java.net.InetSocketAddress;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class FileStorageServiceTest {
@@ -32,8 +31,7 @@ class FileStorageServiceTest {
 
             var file = service.downloadAdminAttachment(attachment);
 
-            assertArrayEquals(data, file.getContent());
-            assertEquals("application/pdf", file.getMediaType().toString());
+            assertArrayEquals(data, file);
             attachment.setSourceUrl("http://127.0.0.1:" + server.getAddress().getPort() + "/missing");
             assertThrows(FileStorageException.class, () -> service.downloadAdminAttachment(attachment));
         } finally {
