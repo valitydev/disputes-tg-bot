@@ -41,7 +41,7 @@ public class DisputesApiNotificationHandler implements AdminCallbackServiceSrv.I
     @Override
     public void notify(Dispute dispute) throws TException {
         if (isUsefulManualPending(dispute)) {
-            log.info("Processing {} notification", dispute);
+            log.info("Processing {} notification", dispute.getDisputeId());
             handleManualPending(dispute);
         }
     }
@@ -130,7 +130,7 @@ public class DisputesApiNotificationHandler implements AdminCallbackServiceSrv.I
     }
 
     public void notifyDisabled(Dispute dispute) throws TException {
-        log.info("Processing {} notification", dispute);
+        log.info("Processing {} notification", dispute.getDisputeId());
         switch (dispute.getStatus()) {
             case "already_exist_created" -> {
                 var reply = polyglot.getText("dispute.support.already-created",

@@ -157,8 +157,8 @@ class DisputesApiNotificationHandlerTest {
     @Test
     @DisplayName("notify sends all manual_pending dispute attachments")
     void notifyManualPendingSendsAllAttachments() throws Exception {
-        var firstAttachment = new AttachmentRef("file-1", "application/pdf");
-        var secondAttachment = new AttachmentRef("file-2", "image/png");
+        var firstAttachment = new AttachmentRef("https://storage.example/file-1", "application/pdf");
+        var secondAttachment = new AttachmentRef("https://storage.example/file-2", "image/png");
         var dispute = new Dispute();
         dispute.setDisputeId(DISPUTE_ID.toString());
         dispute.setStatus("manual_pending");
@@ -200,7 +200,7 @@ class DisputesApiNotificationHandlerTest {
     @Test
     @DisplayName("notify sends one manual_pending dispute attachment as document with caption")
     void notifyManualPendingSendsSingleAttachment() throws Exception {
-        var attachmentRef = new AttachmentRef("file-1", "application/pdf");
+        var attachmentRef = new AttachmentRef("https://storage.example/file-1", "application/pdf");
         var dispute = new Dispute();
         dispute.setDisputeId(DISPUTE_ID.toString());
         dispute.setStatus("manual_pending");
@@ -232,8 +232,8 @@ class DisputesApiNotificationHandlerTest {
     @Test
     @DisplayName("notify preserves text flow when attachment preparation fails")
     void notifyManualPendingPreservesTextFlowOnAttachmentFailure() throws Exception {
-        var brokenAttachment = new AttachmentRef("broken-file", "application/pdf");
-        var validAttachment = new AttachmentRef("valid-file", "image/png");
+        var brokenAttachment = new AttachmentRef("https://storage.example/broken-file", "application/pdf");
+        var validAttachment = new AttachmentRef("https://storage.example/valid-file", "image/png");
         var dispute = new Dispute();
         dispute.setDisputeId(DISPUTE_ID.toString());
         dispute.setStatus("manual_pending");
@@ -272,7 +272,7 @@ class DisputesApiNotificationHandlerTest {
         dispute.setStatus("manual_pending");
         dispute.setInvoiceId(INVOICE_ID);
         dispute.setPaymentId(PAYMENT_ID);
-        dispute.setAttachmentRefs(List.of(new AttachmentRef("file-id", "application/pdf")));
+        dispute.setAttachmentRefs(List.of(new AttachmentRef("https://storage.example/file-id", "application/pdf")));
 
         var providerRef = new ProviderRef().setId(1);
         when(hellgateService.getInvoice(INVOICE_ID)).thenReturn(buildInvoice(providerRef));
