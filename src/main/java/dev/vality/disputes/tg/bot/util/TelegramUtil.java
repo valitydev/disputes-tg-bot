@@ -1,6 +1,5 @@
 package dev.vality.disputes.tg.bot.util;
 
-import dev.vality.disputes.tg.bot.dto.File;
 import lombok.experimental.UtilityClass;
 import org.telegram.telegrambots.meta.api.methods.reactions.SetMessageReaction;
 import org.telegram.telegrambots.meta.api.methods.send.SendDocument;
@@ -254,10 +253,6 @@ public class TelegramUtil {
         var messageReaction = new SetMessageReaction(String.valueOf(chatId), messageId);
         messageReaction.setReactionTypes(List.of(reaction));
         return messageReaction;
-    }
-
-    public static InputFile convertToInputFile(File document, String fileName) {
-        return convertToInputFile(document.getContent(), fileName);
     }
 
     public static InputFile convertToInputFile(byte[] content, String fileName) {

@@ -168,9 +168,9 @@ class DisputesApiNotificationHandlerTest {
 
         verify(telegramApiService, never()).sendMessage(anyString(), anyLong(), anyInt());
         verify(attachmentService).prepareAttachment(
-                DISPUTE_ID + "-1", dispute.getAttachmentRefs().orElseThrow().get(0));
+                DISPUTE_ID + "-1", "https://storage.example/0", "application/pdf");
         verify(attachmentService).prepareAttachment(
-                DISPUTE_ID + "-2", dispute.getAttachmentRefs().orElseThrow().get(1));
+                DISPUTE_ID + "-2", "https://storage.example/1", "application/pdf");
         assertReviews(2);
     }
 
@@ -192,7 +192,7 @@ class DisputesApiNotificationHandlerTest {
     @Test
     void notifySkipsBrokenAttachment() throws Exception {
         var dispute = disputeWithAttachments(2);
-        when(attachmentService.prepareAttachment(eq(DISPUTE_ID + "-1"), any()))
+        when(attachmentService.prepareAttachment(eq(DISPUTE_ID + "-1"), anyString(), anyString()))
                 .thenThrow(new IllegalArgumentException("Invalid attachment"));
         when(telegramApiService.sendMessageWithDocument(anyString(), anyLong(), anyInt(), any()))
                 .thenReturn(Optional.of(message(0)));
@@ -207,7 +207,7 @@ class DisputesApiNotificationHandlerTest {
     @Test
     void notifySendsTextWhenAllAttachmentsFailPreparation() throws Exception {
         var dispute = disputeWithAttachments(2);
-        when(attachmentService.prepareAttachment(anyString(), any()))
+        when(attachmentService.prepareAttachment(anyString(), anyString(), anyString()))
                 .thenThrow(new IllegalArgumentException("Invalid attachment"));
         when(telegramApiService.sendMessage(anyString(), anyLong(), anyInt())).thenReturn(Optional.of(message(0)));
 
@@ -228,7 +228,7 @@ class DisputesApiNotificationHandlerTest {
 
         notificationHandler.notify(dispute);
 
-        verify(attachmentService, times(10)).prepareAttachment(anyString(), any());
+        verify(attachmentService, times(10)).prepareAttachment(anyString(), anyString(), anyString());
         verify(telegramApiService).sendMessageWithDocuments(anyString(), anyLong(), anyInt(),
                 argThat(files -> files.stream().map(InputFile::getMediaName).toList()
                         .equals(IntStream.range(0, 10).mapToObj(Integer::toString).toList())));
@@ -240,15 +240,15 @@ class DisputesApiNotificationHandlerTest {
     @Test
     void notifyDoesNotReplaceFailedAttachmentWithEleventh() throws Exception {
         var dispute = disputeWithAttachments(11);
-        when(attachmentService.prepareAttachment(eq(DISPUTE_ID + "-1"), any()))
+        when(attachmentService.prepareAttachment(eq(DISPUTE_ID + "-1"), anyString(), anyString()))
                 .thenThrow(new IllegalArgumentException("Invalid attachment"));
         when(telegramApiService.sendMessageWithDocuments(anyString(), anyLong(), anyInt(), anyList()))
                 .thenReturn(Optional.of(messages(0, 9)));
 
         notificationHandler.notify(dispute);
 
-        verify(attachmentService, times(10)).prepareAttachment(anyString(), any());
-        verify(attachmentService, never()).prepareAttachment(eq(DISPUTE_ID + "-11"), any());
+        verify(attachmentService, times(10)).prepareAttachment(anyString(), anyString(), anyString());
+        verify(attachmentService, never()).prepareAttachment(eq(DISPUTE_ID + "-11"), anyString(), anyString());
         verify(telegramApiService).sendMessageWithDocuments(anyString(), anyLong(), anyInt(),
                 argThat(files -> files.size() == 9));
         assertReviews(9);
@@ -306,7 +306,9 @@ class DisputesApiNotificationHandlerTest {
         dispute.setAttachmentRefs(attachments);
         for (int i = 0; i < count; i++) {
             var file = new InputFile(new ByteArrayInputStream(new byte[0]), Integer.toString(i));
-            when(attachmentService.prepareAttachment(DISPUTE_ID + "-" + (i + 1), attachments.get(i)))
+            var attachment = attachments.get(i);
+            when(attachmentService.prepareAttachment(
+                    DISPUTE_ID + "-" + (i + 1), attachment.getSourceUrl(), attachment.getMimeType()))
                     .thenReturn(file);
         }
         var providerRef = new ProviderRef().setId(1);

@@ -70,13 +70,15 @@ public class DisputesApiNotificationHandler implements AdminCallbackServiceSrv.I
         var attachmentRefs = dispute.getAttachmentRefs().orElseGet(List::of);
         int attachmentCount = Math.min(attachmentRefs.size(), MAX_ATTACHMENTS);
         if (attachmentCount < attachmentRefs.size()) {
-            log.warn("Got {} attachments, but will process only {} first files", attachmentRefs.size(), MAX_ATTACHMENTS);
+            log.warn("Got {} attachments, but will process only {} first files",
+                    attachmentRefs.size(), MAX_ATTACHMENTS);
         }
         var attachments = new ArrayList<InputFile>(attachmentCount);
         for (int i = 0; i < attachmentCount; i++) {
             try {
+                var attachment = attachmentRefs.get(i);
                 attachments.add(attachmentService.prepareAttachment(
-                        dispute.getDisputeId() + "-" + (i + 1), attachmentRefs.get(i)));
+                        dispute.getDisputeId() + "-" + (i + 1), attachment.getSourceUrl(), attachment.getMimeType()));
             } catch (Exception e) {
                 log.warn("Unable to prepare attachment {} of {} for dispute {}, continuing with the remaining files",
                         i + 1, attachmentCount, dispute.getDisputeId(), e);
