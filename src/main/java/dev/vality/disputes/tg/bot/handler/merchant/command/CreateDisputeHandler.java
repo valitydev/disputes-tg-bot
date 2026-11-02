@@ -2,6 +2,7 @@ package dev.vality.disputes.tg.bot.handler.merchant.command;
 
 import dev.vality.damsel.payment_processing.Invoice;
 import dev.vality.damsel.payment_processing.InvoiceNotFound;
+import dev.vality.disputes.merchant.Attachment;
 import dev.vality.disputes.merchant.DisputeParams;
 import dev.vality.disputes.tg.bot.converter.UpdateToAttachmentConverter;
 import dev.vality.disputes.tg.bot.dao.MerchantDisputeDao;
@@ -29,6 +30,7 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
@@ -81,9 +83,11 @@ public class CreateDisputeHandler implements MerchantMessageHandler {
     }
 
     public void handle(MerchantMessageDto message,
-                              DisputeInfoDto generalDisputeInfo, Locale replyLocale) {
+                       DisputeInfoDto generalDisputeInfo, Locale replyLocale) {
         var update = message.getUpdate();
-        if (!hasAttachment(update)) {
+        var attachmentUpdates = message.getAttachmentUpdates() == null
+                ? List.of(update) : message.getAttachmentUpdates();
+        if (attachmentUpdates.stream().noneMatch(TelegramUtil::hasAttachment)) {
             log.warn("[{}] Attachment missing", update.getUpdateId());
             String reply = polyglot.getText(replyLocale, "error.input.attachment-missing");
             telegramApiService.sendReplyTo(reply, update);
@@ -124,15 +128,24 @@ public class CreateDisputeHandler implements MerchantMessageHandler {
         disputeParams.setPaymentId(generalDisputeInfo.getPaymentId());
 
         // Download and parse attachments
-        try {
-            var attachment = attachmentConverter.convert(update);
-            disputeParams.setAttachments(List.of(attachment));
-        } catch (TelegramApiException | IOException e) {
-            log.error("[{}] Unable to process attached file", update.getUpdateId(), e);
+        var attachments = new ArrayList<Attachment>(attachmentUpdates.size());
+        for (var attachmentUpdate : attachmentUpdates) {
+            if (hasAttachment(attachmentUpdate)) {
+                try {
+                    attachments.add(attachmentConverter.convert(attachmentUpdate));
+                } catch (TelegramApiException | IOException e) {
+                    log.warn("[{}] Unable to process attachment from update {}, continuing with the remaining files",
+                            update.getUpdateId(), attachmentUpdate.getUpdateId(), e);
+                }
+            }
+        }
+        if (attachments.isEmpty()) {
+            log.error("[{}] Unable to process any attached file", update.getUpdateId());
             String reply = polyglot.getText(replyLocale, "error.unknown");
             telegramApiService.sendReplyTo(reply, update);
             return;
         }
+        disputeParams.setAttachments(attachments);
 
         // Create dispute via disputes-api
         try {

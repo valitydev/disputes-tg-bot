@@ -39,11 +39,26 @@ public class MerchantRootHandler implements TelegramEventHandler {
     @Override
     @SuppressWarnings({"DataFlowIssue", "OptionalGetWithoutIsPresent"})
     public void handle(Update message) {
+        handleMerchantMessages(message, List.of(message));
+    }
+
+    @Override
+    public void handle(List<Update> messages) {
+        var primaryMessage = messages.stream()
+                .filter(message -> TelegramUtil.extractText(message) != null)
+                .findFirst()
+                .orElseGet(messages::getFirst);
+        handleMerchantMessages(primaryMessage, messages);
+    }
+
+    @SuppressWarnings({"DataFlowIssue", "OptionalGetWithoutIsPresent"})
+    private void handleMerchantMessages(Update message, List<Update> attachmentUpdates) {
         Long chatId = TelegramUtil.getChatId(message);
         Optional<MerchantChat> chat = merchantChatDao.get(chatId);
         var merchantMessage = MerchantMessageDto.builder()
                 .merchantChat(chat.get())
                 .update(message)
+                .attachmentUpdates(attachmentUpdates)
                 .build();
 
         handlers.stream()

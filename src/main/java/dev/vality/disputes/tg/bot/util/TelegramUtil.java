@@ -214,6 +214,11 @@ public class TelegramUtil {
         }
     }
 
+    public static String getMediaGroupId(Update update) {
+        var message = getMessage(update);
+        return message == null ? null : message.getMediaGroupId();
+    }
+
     public static String extractUserInfo(Update update) {
         var user = getUser(update);
         if (user == null) {
