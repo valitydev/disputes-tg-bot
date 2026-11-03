@@ -13,6 +13,7 @@ import java.util.List;
 @ToString
 public class MerchantMessageDto {
     private Update update;
+    private List<Update> attachmentUpdates;
     private MerchantChat merchantChat;
     private List<String> permittedParties;
 }
