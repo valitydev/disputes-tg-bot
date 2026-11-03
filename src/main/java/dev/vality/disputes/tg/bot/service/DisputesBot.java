@@ -15,6 +15,7 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -40,12 +41,7 @@ public class DisputesBot implements SpringLongPollingBot, LongPollingUpdateConsu
 
     @Override
     public void consume(List<Update> updates) {
-        var mediaGroups = updates.stream()
-                .filter(update -> TelegramUtil.getMediaGroupId(update) != null)
-                .collect(Collectors.groupingBy(
-                        TelegramUtil::getMediaGroupId,
-                        LinkedHashMap::new,
-                        Collectors.toList()));
+        var mediaGroups = groupUpdatesByMediaGroupId(updates);
         var processedMediaGroups = new HashSet<String>();
         for (var update : updates) {
             var mediaGroupId = TelegramUtil.getMediaGroupId(update);
@@ -61,7 +57,20 @@ public class DisputesBot implements SpringLongPollingBot, LongPollingUpdateConsu
         dispatch(update, handler -> handler.handle(update));
     }
 
+    private Map<String, List<Update>> groupUpdatesByMediaGroupId(List<Update> updates) {
+        return updates.stream()
+                .filter(update -> TelegramUtil.getMediaGroupId(update) != null)
+                .collect(Collectors.groupingBy(
+                        TelegramUtil::getMediaGroupId,
+                        LinkedHashMap::new,
+                        Collectors.toList()));
+    }
+
     private void consumeMediaGroup(List<Update> updates) {
+        if (updates.size() == 1) {
+            log.warn("Media group {} has only one update in the current batch, album may be split across batches",
+                    TelegramUtil.getMediaGroupId(updates.getFirst()));
+        }
         var primaryUpdate = updates.stream()
                 .filter(update -> TelegramUtil.extractText(update) != null)
                 .findFirst()
