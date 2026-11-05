@@ -52,8 +52,8 @@ class DisputesBotTest {
 
             var warnings = appender.list.stream().filter(event -> event.getLevel() == Level.WARN).toList();
             assertEquals(1, warnings.size());
-            assertEquals("Media group group-1 has only one update in the current batch; " +
-                    "the album may be split across batches", warnings.getFirst().getFormattedMessage());
+            assertEquals("Media group group-1 has only one update in the current batch, " +
+                    "album may be split across batches", warnings.getFirst().getFormattedMessage());
         } finally {
             logger.detachAppender(appender);
             appender.stop();
