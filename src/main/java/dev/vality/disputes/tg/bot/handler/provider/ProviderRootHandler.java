@@ -14,6 +14,8 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 
 import java.util.List;
 
+import static dev.vality.disputes.tg.bot.util.FormatUtil.prepareForLog;
+
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -59,6 +61,6 @@ public class ProviderRootHandler implements TelegramEventHandler {
                         },
                         () -> log.info("[{}] No suitable provider handler found for update: {}",
                                 providerMessage.getUpdate().getUpdateId(),
-                                providerMessage));
+                                prepareForLog(providerMessage.toString())));
     }
 }

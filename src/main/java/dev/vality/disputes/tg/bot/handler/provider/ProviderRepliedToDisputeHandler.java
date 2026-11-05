@@ -36,6 +36,7 @@ import java.util.Locale;
 import java.util.Optional;
 
 import static dev.vality.disputes.tg.bot.config.model.ResponsePattern.ResponseType.DECLINED;
+import static dev.vality.disputes.tg.bot.util.FormatUtil.prepareForLog;
 import static dev.vality.disputes.tg.bot.util.TelegramUtil.extractText;
 import static dev.vality.disputes.tg.bot.util.TelegramUtil.getMessage;
 
@@ -111,7 +112,7 @@ public class ProviderRepliedToDisputeHandler implements ProviderMessageHandler {
             }
             case PENDING -> {
                 log.info("Provider reply '{}' matches '{}' type, support won't be notified",
-                        replyText, pattern.getResponseType());
+                        prepareForLog(replyText), pattern.getResponseType());
                 updateProviderMessage(providerDispute, replyText);
             }
             case DECLINED -> handleDeclinedDispute(providerDispute, pattern, replyText);

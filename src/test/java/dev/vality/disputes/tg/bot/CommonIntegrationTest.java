@@ -5,6 +5,7 @@ import dev.vality.damsel.payment_processing.InvoiceNotFound;
 import dev.vality.damsel.payment_processing.InvoicePayment;
 import dev.vality.disputes.merchant.DisputeCreatedResult;
 import dev.vality.disputes.merchant.DisputeCreatedSuccessResult;
+import dev.vality.disputes.merchant.DisputeParams;
 import dev.vality.disputes.merchant.DisputeStatusResult;
 import dev.vality.disputes.tg.bot.config.PostgresqlSpringBootITest;
 import dev.vality.disputes.tg.bot.config.properties.AdminChatProperties;
@@ -19,6 +20,7 @@ import dev.vality.disputes.tg.bot.test.TelegramObjectUtil;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -26,6 +28,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.telegram.telegrambots.longpolling.starter.TelegramBotInitializer;
 import org.telegram.telegrambots.meta.api.methods.groupadministration.GetChat;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
 
@@ -75,7 +78,7 @@ public class CommonIntegrationTest {
         assertDoesNotThrow(() -> disputesBot.consume(update));
         telegramEventHandlerList.forEach(handler -> {
             verify(handler, times(1)).filter(any());
-            verify(handler, times(0)).handle(any());
+            verify(handler, times(0)).handle(any(Update.class));
         });
         verifyNoInteractions(telegramClient);
     }
@@ -156,9 +159,15 @@ public class CommonIntegrationTest {
         disputeResult.setSuccessResult(successResult);
         when(disputesApiService.createDispute(any())).thenReturn(disputeResult);
 
-        // Create dispute command with attachment
-        var update = TelegramObjectUtil.buildMerchantCreateDisputeCommand();
-        update.getMessage().getChat().setId(chatId);
+        // Create dispute command with attachments
+        var firstUpdate = TelegramObjectUtil.buildMerchantCreateDisputeCommand();
+        var secondUpdate = TelegramObjectUtil.buildMerchantCreateDisputeCommand();
+        var mediaGroupId = UUID.randomUUID().toString();
+        firstUpdate.getMessage().getChat().setId(chatId);
+        firstUpdate.getMessage().setMediaGroupId(mediaGroupId);
+        secondUpdate.getMessage().getChat().setId(chatId);
+        secondUpdate.getMessage().setMediaGroupId(mediaGroupId);
+        secondUpdate.getMessage().setCaption(null);
 
         // Check that no dispute exists before
         var disputesBefore = merchantDisputeDao.getByInvoiceId(TelegramObjectUtil.TEST_INVOICE_ID);
@@ -166,7 +175,11 @@ public class CommonIntegrationTest {
 
         doReturn(new byte[0]).when(telegramApiService).getFile(any());
         // Execute command
-        assertDoesNotThrow(() -> disputesBot.consume(update));
+        assertDoesNotThrow(() -> disputesBot.consume(List.of(firstUpdate, secondUpdate)));
+
+        var disputeParamsCaptor = ArgumentCaptor.forClass(DisputeParams.class);
+        verify(disputesApiService).createDispute(disputeParamsCaptor.capture());
+        assertEquals(2, disputeParamsCaptor.getValue().getAttachmentsSize());
 
         // Verify dispute was created
         var disputesAfter = merchantDisputeDao.getByInvoiceId(TelegramObjectUtil.TEST_INVOICE_ID);
