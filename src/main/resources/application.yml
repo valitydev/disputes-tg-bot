@@ -50,6 +50,7 @@ spring:
       token: "123456"
 
 dispute:
+  notification-url: ${DISPUTE_NOTIFICATION_URL:http://localhost:8022/v1/disputes/notifications}
   isScheduleEnabled: false
   batchSize: 1
   fixedDelayStatus: 900000

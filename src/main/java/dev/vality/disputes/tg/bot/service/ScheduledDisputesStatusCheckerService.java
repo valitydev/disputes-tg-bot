@@ -1,6 +1,5 @@
 package dev.vality.disputes.tg.bot.service;
 
-import dev.vality.disputes.tg.bot.dao.MerchantChatDao;
 import dev.vality.disputes.tg.bot.dao.MerchantDisputeDao;
 import dev.vality.disputes.tg.bot.domain.enums.DisputeStatus;
 import dev.vality.disputes.tg.bot.domain.tables.pojos.MerchantDispute;
@@ -15,19 +14,15 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
-import static dev.vality.disputes.tg.bot.util.PolyglotUtil.prepareStatusMessage;
-
 @Slf4j
 @ConditionalOnProperty(value = "dispute.isScheduleEnabled", havingValue = "true")
 @Service
 @RequiredArgsConstructor
 public class ScheduledDisputesStatusCheckerService {
 
-    private final Polyglot polyglot;
-    private final TelegramApiService telegramApiService;
     private final MerchantDisputeDao merchantDisputeDao;
-    private final MerchantChatDao merchantChatDao;
     private final StatusDisputeHandler statusDisputeHandler;
+    private final TelegramNotificationService telegramNotificationService;
     @Value("${dispute.batchSize}")
     private int batchSize;
 
@@ -39,6 +34,7 @@ public class ScheduledDisputesStatusCheckerService {
             var disputes = merchantDisputeDao.getPendingDisputesSkipLocked(batchSize);
             if (disputes.isEmpty()) {
                 log.debug("Found 0 pending disputes");
+                return;
             } else {
                 log.info("Found {} pending disputes", disputes.size());
             }
@@ -46,21 +42,13 @@ public class ScheduledDisputesStatusCheckerService {
             List<MerchantDispute> finalizedDisputes =
                     disputes.stream().filter(dispute -> !DisputeStatus.pending.equals(dispute.getStatus()))
                             .toList();
-            log.info("Finalized {} disputes by schedule", finalizedDisputes.size());
-            finalizedDisputes.forEach(this::sendReply);
+            if (!finalizedDisputes.isEmpty()) {
+                log.info("Finalized {} disputes by schedule", finalizedDisputes.size());
+                finalizedDisputes.forEach(telegramNotificationService::sendDisputeStatusToMerchant);
+            }
         } catch (Exception ex) {
             log.error("Received exception while scheduled processing created disputes", ex);
         }
     }
 
-    private void sendReply(MerchantDispute dispute) {
-        var chat = merchantChatDao.getById(dispute.getChatId()).get();
-        var locale = polyglot.getLocale(chat.getLocale());
-        String reply = prepareStatusMessage(dispute, locale, polyglot);
-        try {
-            telegramApiService.sendReplyTo(reply, chat.getChatId(), Math.toIntExact(dispute.getTgMessageId()));
-        } catch (Exception ex) {
-            log.warn("Failed to send reply, dispute: {}", dispute, ex);
-        }
-    }
 }

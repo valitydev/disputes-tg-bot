@@ -1,4 +1,4 @@
-package dev.vality.disputes.tg.bot.servlet;
+package dev.vality.disputes.tg.bot.resource;
 
 import dev.vality.disputes.admin.AdminCallbackServiceSrv;
 import dev.vality.woody.thrift.impl.http.THServiceBuilder;
