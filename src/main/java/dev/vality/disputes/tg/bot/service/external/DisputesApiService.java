@@ -30,6 +30,9 @@ public class DisputesApiService {
                     disputeParams.getInvoiceId(), disputeParams.getPaymentId(), result.getSetField().getFieldName());
             return result;
         } catch (WRuntimeException we) {
+            if (ExceptionUtil.isRequestEntityTooLargeException(we)) {
+                throw new AttachmentTooLargeException();
+            }
             if (ExceptionUtil.isTrxInfoMissingException(we)) {
                 throw new PaymentNotStartedException();
             }

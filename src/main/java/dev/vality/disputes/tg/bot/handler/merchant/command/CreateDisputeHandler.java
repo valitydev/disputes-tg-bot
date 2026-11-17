@@ -176,7 +176,11 @@ public class CreateDisputeHandler implements MerchantMessageHandler {
             log.error("[{}] AttachmentTypeNotSupportedException occurred", update.getUpdateId());
             String reply = polyglot.getText(replyLocale, "error.input.attachment-type-not-supported");
             telegramApiService.sendReplyTo(reply, update);
-        } catch (PaymentExpiredException e4) {
+        } catch (AttachmentTooLargeException e4) {
+            log.error("[{}] AttachmentTooLargeException occurred", update.getUpdateId());
+            String reply = polyglot.getText(replyLocale, "error.input.attachment-too-large");
+            telegramApiService.sendReplyTo(reply, update);
+        } catch (PaymentExpiredException e5) {
             log.error("[{}] PaymentExpiredException occurred", update.getUpdateId());
             String reply = polyglot.getText(replyLocale, "error.input.payment-expired");
             telegramApiService.sendReplyTo(reply, update);

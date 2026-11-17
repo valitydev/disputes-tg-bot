@@ -8,6 +8,9 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 public class ExceptionUtil {
 
+    private static final String TRANSPORT_EXCEPTION = "TTransportException";
+    private static final String REQUEST_ENTITY_TOO_LARGE_MESSAGE = "HTTP Response code: 413";
+
     public static boolean isTrxInfoMissingException(WRuntimeException exception) {
         return isSpecificException(exception, "NotFoundException");
     }
@@ -26,6 +29,13 @@ public class ExceptionUtil {
 
     public static boolean isPaymentExpiredException(WRuntimeException exception) {
         return isSpecificException(exception, "PaymentExpiredException");
+    }
+
+    public static boolean isRequestEntityTooLargeException(WRuntimeException exception) {
+        var errorDefinition = exception.getErrorDefinition();
+        return errorDefinition != null
+                && TRANSPORT_EXCEPTION.equals(errorDefinition.getErrorName())
+                && REQUEST_ENTITY_TOO_LARGE_MESSAGE.equals(errorDefinition.getErrorMessage());
     }
 
     private static boolean isSpecificException(WRuntimeException exception, String exceptionName) {
